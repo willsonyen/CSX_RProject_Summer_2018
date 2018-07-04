@@ -14,4 +14,6 @@
 ## Week 1
 
 * learning markdown
+* hw1 practice
+> [markdown hw1](https://willsonyen.github.io/CSX_RProject_Summer_2018/markdown/markdown.html)
 
