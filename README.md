@@ -1,6 +1,6 @@
 # CSX_RProject_Summer_2018
 
-##自我介紹
+## 自我介紹
 
 >姓名：顏郁修
 
@@ -13,5 +13,5 @@
 
 ## Week 1
 
-* 第一次使用R
-* test
+* learning markdown
+
