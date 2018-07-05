@@ -1,19 +1,19 @@
-# CSX_RProject_Summer_2018
+# [資料科學程式設計] CSX_RProject_Summer_2018
 
-## 自我介紹
+## Introduce myself
 
->姓名：顏郁修
-
->學號：B04605023
-
->校系：台大社會學系
+>Hello,my name is 顏郁修（WillsonYen）,this project is a lesson from CSX call 資料科學程式設計 in NTU.It's my first time to learn R,having fun!
 
 
 ***
 
 ## Week 1
 
-* learning markdown
+* In class
+  * learning markdown
 > [markdown hw1](https://willsonyen.github.io/CSX_RProject_Summer_2018/markdown/markdown.html)
-* test
-  * test
+  * create aa account on github and start to use it
+  
+  
+ * At home
+   * finish the class"Introduction to R" on DataCamp
