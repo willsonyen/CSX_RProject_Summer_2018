@@ -10,10 +10,10 @@
 ## Week 1
 
 * In class
-  * learning markdown
-> [markdown hw1](https://willsonyen.github.io/CSX_RProject_Summer_2018/markdown/markdown.html)
-  * create aa account on github and start to use it
+  1. learning markdown
+[markdown hw1](https://willsonyen.github.io/CSX_RProject_Summer_2018/markdown/markdown.html)
+  2. create an account on github and start to use it
   
   
  * At home
-   * finish the class"Introduction to R" on DataCamp
+   1. finish the class"Introduction to R" on DataCamp
