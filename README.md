@@ -17,3 +17,8 @@
   
  * At home
    1. finish the class"Introduction to R" on DataCamp
+
+
+## Week 2
+* In class
+  1.hw2_part1
