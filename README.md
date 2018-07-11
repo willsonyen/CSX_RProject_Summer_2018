@@ -21,4 +21,4 @@
 
 ## Week 2
 * In class
-  1.hw2_part1
+  1. hw2_part1
