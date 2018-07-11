@@ -21,5 +21,5 @@
 
 ## Week 2
 * In class
-  1. [hw2_part1](file:///Users/willsonyen/Desktop/GitHub/CSX_RProject_Summer_2018/Week_2/hw2_part1.html)
+  1. [hw2_part1](http://willsonyen/Desktop/GitHub/CSX_RProject_Summer_2018/Week_2/hw2_part1.html)
   
