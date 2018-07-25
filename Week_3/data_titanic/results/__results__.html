@@ -1,0 +1,2168 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+<meta name="author" content="Erik Bruin" />
+
+
+<title>Finding the real families on the Titanic, and majority vote ensemble</title>
+
+<script src="__results___files/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="__results___files/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="__results___files/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="__results___files/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="__results___files/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="__results___files/navigation-1.1/tabsets.js"></script>
+<link href="__results___files/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="__results___files/highlightjs-9.12.0/highlight.js"></script>
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+<base target="_blank" /></head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+</style>
+
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+
+
+
+
+
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">Finding the ‘real’ families on the Titanic, and majority vote ensemble</h1>
+<h4 class="author"><em>Erik Bruin</em></h4>
+
+</div>
+
+<div id="TOC">
+<ul>
+<li><a href="#executive-summary"><span class="toc-section-number">1</span> Executive Summary</a></li>
+<li><a href="#introduction"><span class="toc-section-number">2</span> Introduction</a></li>
+<li><a href="#loading-and-exploring-data"><span class="toc-section-number">3</span> Loading and Exploring Data</a><ul>
+<li><a href="#loading-libraries-required-and-reading-the-data-into-r"><span class="toc-section-number">3.1</span> Loading libraries required and reading the data into R</a></li>
+<li><a href="#data-size-and-structure"><span class="toc-section-number">3.2</span> Data size and structure</a></li>
+<li><a href="#completeness-of-the-data"><span class="toc-section-number">3.3</span> Completeness of the data</a></li>
+<li><a href="#exploring-some-of-the-most-important-variables"><span class="toc-section-number">3.4</span> Exploring some of the most important variables</a><ul>
+<li><a href="#the-response-variable-survived"><span class="toc-section-number">3.4.1</span> The response variable; Survived</a></li>
+<li><a href="#sexgender"><span class="toc-section-number">3.4.2</span> Sex/gender</a></li>
+<li><a href="#passenger-class"><span class="toc-section-number">3.4.3</span> Passenger Class</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#feature-engineering"><span class="toc-section-number">4</span> Feature engineering</a><ul>
+<li><a href="#creating-the-title-variable"><span class="toc-section-number">4.1</span> Creating the Title variable</a></li>
+<li><a href="#finding-groups-of-people-traveling-together"><span class="toc-section-number">4.2</span> Finding groups of people traveling together</a><ul>
+<li><a href="#families-siblings-spouses-parents-and-children"><span class="toc-section-number">4.2.1</span> Families; siblings, spouses, parents and children</a></li>
+<li><a href="#family-size-inconsistencies-and-correcting-the-effects-of-a-cancellation"><span class="toc-section-number">4.2.2</span> Family Size inconsistencies, and correcting the effects of a cancellation</a></li>
+<li><a href="#families-what-about-uncles-aunts-cousins-nieces-grandparents-brotherssisters-in-law"><span class="toc-section-number">4.2.3</span> Families; what about uncles, aunts, cousins, nieces, grandparents, brothers/sisters-in law?</a></li>
+<li><a href="#can-we-still-find-more-second-degree-families"><span class="toc-section-number">4.2.4</span> Can we still find more second degree families?</a></li>
+<li><a href="#did-people-book-together"><span class="toc-section-number">4.2.5</span> Did people book together?</a></li>
+</ul></li>
+<li><a href="#dealing-with-the-fare-variable"><span class="toc-section-number">4.3</span> Dealing with the Fare variable</a><ul>
+<li><a href="#which-data-relevant-to-fare-are-missing"><span class="toc-section-number">4.3.1</span> Which data relevant to fare are missing?</a></li>
+<li><a href="#the-fare-per-person-variable"><span class="toc-section-number">4.3.2</span> The Fare Per Person Variable</a></li>
+</ul></li>
+<li><a href="#predicting-missing-age-values"><span class="toc-section-number">4.4</span> Predicting missing Age values</a></li>
+<li><a href="#what-to-do-with-cabin"><span class="toc-section-number">4.5</span> What to do with Cabin?</a></li>
+<li><a href="#how-to-deal-with-children-in-the-model"><span class="toc-section-number">4.6</span> How to deal with Children in the model?</a></li>
+<li><a href="#what-does-embarked-tell-us"><span class="toc-section-number">4.7</span> What does Embarked tell us?</a></li>
+<li><a href="#ticket-survivors"><span class="toc-section-number">4.8</span> Ticket survivors</a></li>
+<li><a href="#adding-an-is-solo-variable-based-on-siblings-and-spouse-sibsp-only"><span class="toc-section-number">4.9</span> Adding an “Is Solo” variable&quot; based on Siblings and Spouse (SibSp) only</a></li>
+</ul></li>
+<li><a href="#predictions-with-caret-cross-validation"><span class="toc-section-number">5</span> Predictions (with caret cross validation)</a><ul>
+<li><a href="#random-forest-model"><span class="toc-section-number">5.1</span> Random Forest model</a></li>
+<li><a href="#support-vector-machine-svm-model"><span class="toc-section-number">5.2</span> Support Vector Machine (SVM) model</a></li>
+<li><a href="#gradient-boosting-machine-gbm-model"><span class="toc-section-number">5.3</span> Gradient Boosting Machine (GBM) model</a></li>
+<li><a href="#combining-models"><span class="toc-section-number">5.4</span> Combining models</a><ul>
+<li><a href="#majority-vote-ensemble-of-the-three-models"><span class="toc-section-number">5.4.1</span> Majority vote ensemble of the three models</a></li>
+<li><a href="#taking-predictions-from-one-model-unless-the-others-both-disagree"><span class="toc-section-number">5.4.2</span> Taking predictions from one model, unless the others both disagree</a></li>
+<li><a href="#selectively-combining-models-for-pclasssex-combinations"><span class="toc-section-number">5.4.3</span> Selectively combining models for PclassSex combinations</a></li>
+</ul></li>
+<li><a href="#where-is-room-for-improvement"><span class="toc-section-number">5.5</span> Where is room for improvement?</a><ul>
+<li><a href="#how-to-fix-male-in-1st-class-issues"><span class="toc-section-number">5.5.1</span> How to fix Male in 1st class issues?</a></li>
+<li><a href="#how-to-fix-female-in-3rd-class-issues"><span class="toc-section-number">5.5.2</span> How to fix Female in 3rd class issues?</a></li>
+</ul></li>
+</ul></li>
+</ul>
+</div>
+
+<div id="executive-summary" class="section level1">
+<h1><span class="header-section-number">1</span> Executive Summary</h1>
+<p>This project is my first attempt to compete in a Kaggle Machine Learning competition in which we have to predict who survived the Titanic disaster. I enjoyed it very much and learned a lot. Key findings were:</p>
+<ul>
+<li>My key to success was to dive deep into groups of people that traveled together. My grouping variable is different when compared to other kernels that I have looked at.</li>
+<li>The main things that I have done that I have not seen in any other kernels yet is the grouping of ‘second degree’ family members. Uncles, grandparents, cousins, and brothers/sisters-in-law can actually be found in the data.</li>
+<li>My public score on Kaggle is 0.81818. As this is a top4% score, I am pretty pleased with the result.</li>
+<li>I am just using 5 predictors. A significant difference with most kernels is that I eventually got rid of the Title variable. I believe that the models are much cleaner model now as the Title variance double counts the Sex/Gender variance (and also male children (called Masters)).</li>
+<li>My analysis includes three models: a Random Forest model, a Support Vector Machine (SVM) model, and a Gradient Boosting Machine (GBM) model.</li>
+<li>I included three frameworks that combine models.
+<ul>
+<li>The first one is a simple voting ensemble that takes the majority vote of 3 models.</li>
+<li>The second framework is similar. It takes the predictions from one model (the best model), and only changes the prediction if both other models disagree with that best model.</li>
+<li>The third thing that I tried is selectively using models for specific categories.</li>
+</ul></li>
+<li>The best results were achieved by using the SVM model for 1st and 2nd class passengers, and use the GBM model for 3rd class passengers.</li>
+</ul>
+</div>
+<div id="introduction" class="section level1">
+<h1><span class="header-section-number">2</span> Introduction</h1>
+<p>Kaggle describes this competition as <a href="https://www.kaggle.com/c/titanic">follows</a>:</p>
+<p>The sinking of the RMS Titanic is one of the most infamous shipwrecks in history. On April 15, 1912, during her maiden voyage, the Titanic sank after colliding with an iceberg, killing 1502 out of 2224 passengers and crew. This sensational tragedy shocked the international community and led to better safety regulations for ships.</p>
+<p>One of the reasons that the shipwreck led to such loss of life was that there were not enough lifeboats for the passengers and crew. Although there was some element of luck involved in surviving the sinking, some groups of people were more likely to survive than others, such as women, children, and the upper-class.</p>
+<p>In this challenge, we ask you to complete the analysis of what sorts of people were likely to survive. In particular, we ask you to apply the tools of machine learning to predict which passengers survived the tragedy.</p>
+<center>
+<img src="https://vignette.wikia.nocookie.net/jamescameronstitanic/images/5/55/Titanic_sinking.jpg/revision/latest?cb=20130918052255" style="width: 600px;"/>
+</center>
+</div>
+<div id="loading-and-exploring-data" class="section level1">
+<h1><span class="header-section-number">3</span> Loading and Exploring Data</h1>
+<div id="loading-libraries-required-and-reading-the-data-into-r" class="section level2">
+<h2><span class="header-section-number">3.1</span> Loading libraries required and reading the data into R</h2>
+<p>Loading R packages used besides base R.</p>
+<pre class="r"><code>library(Hmisc)
+library(knitr)
+library(ggplot2)
+library(dplyr)
+library(caret)
+library(randomForest)
+library(gridExtra)
+library(ROCR)
+library(corrplot)</code></pre>
+<p>Below, I am reading the csv’s as dataframes into R.</p>
+<pre class="r"><code>train &lt;- read.csv(&quot;../input/train.csv&quot;, stringsAsFactors = F, na.strings = c(&quot;NA&quot;, &quot;&quot;))
+test &lt;- read.csv(&quot;../input/test.csv&quot;, stringsAsFactors = F, na.strings = c(&quot;NA&quot;, &quot;&quot;))</code></pre>
+</div>
+<div id="data-size-and-structure" class="section level2">
+<h2><span class="header-section-number">3.2</span> Data size and structure</h2>
+<p>The training set consist of 891 observations and 12 variables. I have read all the “factors” (for instance male/female) into R as character strings, as some of them require processing first.</p>
+<pre class="r"><code>str(train)</code></pre>
+<pre><code>## &#39;data.frame&#39;:    891 obs. of  12 variables:
+##  $ PassengerId: int  1 2 3 4 5 6 7 8 9 10 ...
+##  $ Survived   : int  0 1 1 1 0 0 0 0 1 1 ...
+##  $ Pclass     : int  3 1 3 1 3 3 1 3 3 2 ...
+##  $ Name       : chr  &quot;Braund, Mr. Owen Harris&quot; &quot;Cumings, Mrs. John Bradley (Florence Briggs Thayer)&quot; &quot;Heikkinen, Miss. Laina&quot; &quot;Futrelle, Mrs. Jacques Heath (Lily May Peel)&quot; ...
+##  $ Sex        : chr  &quot;male&quot; &quot;female&quot; &quot;female&quot; &quot;female&quot; ...
+##  $ Age        : num  22 38 26 35 35 NA 54 2 27 14 ...
+##  $ SibSp      : int  1 1 0 1 0 0 0 3 0 1 ...
+##  $ Parch      : int  0 0 0 0 0 0 0 1 2 0 ...
+##  $ Ticket     : chr  &quot;A/5 21171&quot; &quot;PC 17599&quot; &quot;STON/O2. 3101282&quot; &quot;113803&quot; ...
+##  $ Fare       : num  7.25 71.28 7.92 53.1 8.05 ...
+##  $ Cabin      : chr  NA &quot;C85&quot; NA &quot;C123&quot; ...
+##  $ Embarked   : chr  &quot;S&quot; &quot;C&quot; &quot;S&quot; &quot;S&quot; ...</code></pre>
+<p>A description of each variable, including description of some key values, is given below.</p>
+<table>
+<colgroup>
+<col width="15%" />
+<col width="36%" />
+<col width="47%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Variable Name</th>
+<th>Description</th>
+<th>Key</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Survived</td>
+<td>Survival</td>
+<td>0 = No, 1 = Yes</td>
+</tr>
+<tr class="even">
+<td>Pclass</td>
+<td>Passenger’s class</td>
+<td>1 = 1st, 2 = 2nd, 3 = 3rd</td>
+</tr>
+<tr class="odd">
+<td>Name</td>
+<td>Passenger’s name</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Sex</td>
+<td>Passenger’s sex</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Age</td>
+<td>Passenger’s age</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>SibSp</td>
+<td>Number of siblings/spouses aboard</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Parch</td>
+<td>Number of parents/children aboard</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Ticket</td>
+<td>Ticket number</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Fare</td>
+<td>Fare</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Cabin</td>
+<td>Cabin</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Embarked</td>
+<td>Port of embarkation</td>
+<td>C = Cherbourg, Q = Queenstown, S = Southampton</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p>The test set consists of 418 observations, with the variable “Survived” missing compared to the training set. “Creating” this variable is eventually the purpose of this project.</p>
+<p>Below I am merging test and train, as this is required for data cleaning and feature engineering.</p>
+<pre class="r"><code>test$Survived &lt;- NA
+all &lt;- rbind(train, test)</code></pre>
+</div>
+<div id="completeness-of-the-data" class="section level2">
+<h2><span class="header-section-number">3.3</span> Completeness of the data</h2>
+<p>First of all, I would like to see which variables contain missing values (blanks are also imported as NA (=Not Available)).</p>
+<pre class="r"><code>sapply(all, function(x) {sum(is.na(x))})</code></pre>
+<pre><code>## PassengerId    Survived      Pclass        Name         Sex         Age 
+##           0         418           0           0           0         263 
+##       SibSp       Parch      Ticket        Fare       Cabin    Embarked 
+##           0           0           0           1        1014           2</code></pre>
+<p>Of course, the 418 NAs in Survived is the total number is observations in the test set. So this variable is what it should be (No NAs in train). Of the other variables, Cabin is sparsely populated. Age is also missing a substantial number of values. In addition, Embarked is missing two values and one Fare value is missing.</p>
+</div>
+<div id="exploring-some-of-the-most-important-variables" class="section level2">
+<h2><span class="header-section-number">3.4</span> Exploring some of the most important variables</h2>
+<p>Our response variable in the training set is complete, as well as Sex and Pclass, which seem two of the most important predictors. Since they are complete and tidy, I am converting them into factors.</p>
+<pre class="r"><code>all$Sex &lt;- as.factor(all$Sex)
+all$Survived &lt;- as.factor(all$Survived)
+all$Pclass &lt;- as.ordered(all$Pclass) #because Pclass is ordinal</code></pre>
+<div id="the-response-variable-survived" class="section level3">
+<h3><span class="header-section-number">3.4.1</span> The response variable; Survived</h3>
+<p>Of course, the very first thing that I want to do is explore the response variable. How many people survived, and how many died? You can see this below. Altogether, of the people in the training set (891 observations) 61.6% died. For the remaining 418 observations (test set), this is what we have to predict.</p>
+<pre class="r"><code>ggplot(all[!is.na(all$Survived),], aes(x = Survived, fill = Survived)) +
+  geom_bar(stat=&#39;count&#39;) +
+  labs(x = &#39;How many people died and survived on the Titanic?&#39;) +
+        geom_label(stat=&#39;count&#39;,aes(label=..count..), size=7) +
+        theme_grey(base_size = 18)</code></pre>
+<p><img src="__results___files/figure-html/unnamed-chunk-7-1.png" width="50%" /></p>
+</div>
+<div id="sexgender" class="section level3">
+<h3><span class="header-section-number">3.4.2</span> Sex/gender</h3>
+<p>Of the 1309 people on the Titanic, a majority of 64.4% was male. This percentage was almost the same in the training data (64.7%). Within the training data 81.1% of the men died, and 25.8% of the women died. Due to this large difference, Sex/gender seems a very important predictor.</p>
+<pre class="r"><code>p1 &lt;- ggplot(all, aes(x = Sex, fill = Sex)) +
+  geom_bar(stat=&#39;count&#39;, position=&#39;dodge&#39;) + theme_grey() +
+  labs(x = &#39;All data&#39;) +
+        geom_label(stat=&#39;count&#39;, aes(label=..count..)) +
+        scale_fill_manual(&quot;legend&quot;, values = c(&quot;female&quot; = &quot;pink&quot;, &quot;male&quot; = &quot;green&quot;))
+p2 &lt;- ggplot(all[!is.na(all$Survived),], aes(x = Sex, fill = Survived)) +
+  geom_bar(stat=&#39;count&#39;, position=&#39;dodge&#39;) + theme_grey() +
+  labs(x = &#39;Training data only&#39;) +
+        geom_label(stat=&#39;count&#39;, aes(label=..count..))
+
+grid.arrange(p1,p2, nrow=1)</code></pre>
+<p><img src="__results___files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+</div>
+<div id="passenger-class" class="section level3">
+<h3><span class="header-section-number">3.4.3</span> Passenger Class</h3>
+<p>As you can see below, most people traveled in 3rd class. Also, as expected, survival is strongly correlated with the passenger class. A majority of first class passengers survived, and most people in 3rd class died. It is also noticable that almost all women in 1st and 2nd class survived. For men, 2nd class was almost as bad as 3rd class.</p>
+<pre class="r"><code>p3 &lt;- ggplot(all, aes(x = Pclass, fill = Pclass)) +
+  geom_bar(stat=&#39;count&#39;, position=&#39;dodge&#39;) +
+  labs(x = &#39;Pclass, All data&#39;) + geom_label(stat=&#39;count&#39;, aes(label=..count..)) +
+   theme(legend.position=&quot;none&quot;) + theme_grey()     
+p4 &lt;- ggplot(all[!is.na(all$Survived),], aes(x = Pclass, fill = Survived)) +
+  geom_bar(stat=&#39;count&#39;, position=&#39;dodge&#39;) + labs(x = &#39;Training data only&#39;) +
+        theme(legend.position=&quot;none&quot;) + theme_grey()
+p5 &lt;- ggplot(all[!is.na(all$Survived),], aes(x = Pclass, fill = Survived)) +
+  geom_bar(stat=&#39;count&#39;, position=&#39;stack&#39;) +
+  labs(x = &#39;Training data only&#39;, y= &quot;Count&quot;) + facet_grid(.~Sex) +
+        theme(legend.position=&quot;none&quot;) + theme_grey()
+p6 &lt;- ggplot(all[!is.na(all$Survived),], aes(x = Pclass, fill = Survived)) +
+  geom_bar(stat=&#39;count&#39;, position=&#39;fill&#39;) +
+  labs(x = &#39;Training data only&#39;, y= &quot;Percent&quot;) + facet_grid(.~Sex) +
+        theme(legend.position=&quot;none&quot;) + theme_grey()
+
+grid.arrange(p3, p4, p5, p6, ncol=2)</code></pre>
+<p><img src="__results___files/figure-html/unnamed-chunk-9-1.png" width="100%" /></p>
+<p>In early version, I have been working with Pclass and Sex as separate predictors. However, I realized that the ‘headline’ of the model should actually be a combination of the two (also thanks to Oscar Takeshita, who also uses this idea in his excellent analysis. See: <a href="https://www.kaggle.com/pliptor/divide-and-conquer-0-82296">Divide and Conquer [0.82296]</a>). Details that are lost when using the predictors separately were actually already mentioned in the beginning of this section (Pclass 1 and 2 are almost guaranteed survival for women, and Pclass 2 is almost as bad as Pclass 3 for men).</p>
+<pre class="r"><code>all$PclassSex[all$Pclass==&#39;1&#39; &amp; all$Sex==&#39;male&#39;] &lt;- &#39;P1Male&#39;
+all$PclassSex[all$Pclass==&#39;2&#39; &amp; all$Sex==&#39;male&#39;] &lt;- &#39;P2Male&#39;
+all$PclassSex[all$Pclass==&#39;3&#39; &amp; all$Sex==&#39;male&#39;] &lt;- &#39;P3Male&#39;
+all$PclassSex[all$Pclass==&#39;1&#39; &amp; all$Sex==&#39;female&#39;] &lt;- &#39;P1Female&#39;
+all$PclassSex[all$Pclass==&#39;2&#39; &amp; all$Sex==&#39;female&#39;] &lt;- &#39;P2Female&#39;
+all$PclassSex[all$Pclass==&#39;3&#39; &amp; all$Sex==&#39;female&#39;] &lt;- &#39;P3Female&#39;
+all$PclassSex &lt;- as.factor(all$PclassSex)</code></pre>
+</div>
+</div>
+</div>
+<div id="feature-engineering" class="section level1">
+<h1><span class="header-section-number">4</span> Feature engineering</h1>
+<p>While I also started by using the Title as a variable, I am not using it anymore. Although most kernals use it, I believe it double counts variance to much (overfitting). While I am not using the Title directly anymore in my prediction models, it needs to stay in the analysis as it is used to predict missing Ages in section 4.4.</p>
+<div id="creating-the-title-variable" class="section level2">
+<h2><span class="header-section-number">4.1</span> Creating the Title variable</h2>
+<p>The name variable is complete (no NAs), but actually contains more than just a first name and surname. It also contains a Title for each person, which must be separated from the name to obtain tidy data. I am also saving the Surname (first part of the name variable, before the title), as I want to investigate the effects of families traveling together later on (matching with #siblings/spouses and #parents/children).</p>
+<pre class="r"><code>#Extracting Title and Surname from Name
+all$Surname &lt;- sapply(all$Name, function(x) {strsplit(x, split=&#39;[,.]&#39;)[[1]][1]})
+ #correcting some surnames that also include a maiden name
+all$Surname &lt;- sapply(all$Surname, function(x) {strsplit(x, split=&#39;[-]&#39;)[[1]][1]})
+all$Title &lt;- sapply(all$Name, function(x) {strsplit(x, split=&#39;[,.]&#39;)[[1]][2]})
+all$Title &lt;- sub(&#39; &#39;, &#39;&#39;, all$Title) #removing spaces before title
+kable(table(all$Sex, all$Title))</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th align="right">Capt</th>
+<th align="right">Col</th>
+<th align="right">Don</th>
+<th align="right">Dona</th>
+<th align="right">Dr</th>
+<th align="right">Jonkheer</th>
+<th align="right">Lady</th>
+<th align="right">Major</th>
+<th align="right">Master</th>
+<th align="right">Miss</th>
+<th align="right">Mlle</th>
+<th align="right">Mme</th>
+<th align="right">Mr</th>
+<th align="right">Mrs</th>
+<th align="right">Ms</th>
+<th align="right">Rev</th>
+<th align="right">Sir</th>
+<th align="right">the Countess</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>female</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">260</td>
+<td align="right">2</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">197</td>
+<td align="right">2</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td>male</td>
+<td align="right">1</td>
+<td align="right">4</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">7</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">2</td>
+<td align="right">61</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">757</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">8</td>
+<td align="right">1</td>
+<td align="right">0</td>
+</tr>
+</tbody>
+</table>
+<p>After seeing this, I want to reducing the number of titles to create better and more substantial Titles that can be used for prediction. Ms. is usually used for younger married women. I will therefore join this one with Miss. I assume that Mlle stands for Mademoiselle in French. I will also join this category with Miss. I also assume that Mme stands for Madame, and I will join Madame with Mrs. For the titles with low frequecies, I will create one new category.</p>
+<pre class="r"><code>all$Title[all$Title %in% c(&quot;Mlle&quot;, &quot;Ms&quot;)] &lt;- &quot;Miss&quot;
+all$Title[all$Title== &quot;Mme&quot;] &lt;- &quot;Mrs&quot;
+all$Title[!(all$Title %in% c(&#39;Master&#39;, &#39;Miss&#39;, &#39;Mr&#39;, &#39;Mrs&#39;))] &lt;- &quot;Rare Title&quot;
+all$Title &lt;- as.factor(all$Title)
+kable(table(all$Sex, all$Title))</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th align="right">Master</th>
+<th align="right">Miss</th>
+<th align="right">Mr</th>
+<th align="right">Mrs</th>
+<th align="right">Rare Title</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>female</td>
+<td align="right">0</td>
+<td align="right">264</td>
+<td align="right">0</td>
+<td align="right">198</td>
+<td align="right">4</td>
+</tr>
+<tr class="even">
+<td>male</td>
+<td align="right">61</td>
+<td align="right">0</td>
+<td align="right">757</td>
+<td align="right">0</td>
+<td align="right">25</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>ggplot(all[!is.na(all$Survived),], aes(x = Title, fill = Survived)) +
+  geom_bar(stat=&#39;count&#39;, position=&#39;stack&#39;) +
+  labs(x = &#39;Title&#39;) +theme_grey()</code></pre>
+<p><img src="__results___files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
+</div>
+<div id="finding-groups-of-people-traveling-together" class="section level2">
+<h2><span class="header-section-number">4.2</span> Finding groups of people traveling together</h2>
+<div id="families-siblings-spouses-parents-and-children" class="section level3">
+<h3><span class="header-section-number">4.2.1</span> Families; siblings, spouses, parents and children</h3>
+<p>In order to create the family size for each person on the boat, I will add up his/her number of parents/children, his/her number of siblings/spouses, and of course add one (the person himself).</p>
+<pre class="r"><code>#creating family size variable (Fsize)
+all$Fsize &lt;- all$SibSp+all$Parch +1</code></pre>
+<p>Below, you can easily see that solo travelers had a much higher chance to die than to survive. In addition, people traveling in families of 2-4 people actually had a relatively high chance to survive. This chance is significantly lower among 5+ families.</p>
+<pre class="r"><code>ggplot(all[!is.na(all$Survived),], aes(x = Fsize, fill = Survived)) +
+  geom_bar(stat=&#39;count&#39;, position=&#39;dodge&#39;) +
+  scale_x_continuous(breaks=c(1:11)) +
+  labs(x = &#39;Family Size&#39;) + theme_grey()</code></pre>
+<p><img src="__results___files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
+<p>What I now could do is convert these family sizes into categories (solo, small family, large family), but I first want to check if there are any inconsistencies in the data.</p>
+</div>
+<div id="family-size-inconsistencies-and-correcting-the-effects-of-a-cancellation" class="section level3">
+<h3><span class="header-section-number">4.2.2</span> Family Size inconsistencies, and correcting the effects of a cancellation</h3>
+<p>To check the family size data for inconsistencies, I am creating a variable that combines the surname and the Fsize. After that, I am going to check where these combinations lead to strange numbers of families.</p>
+<pre class="r"><code>#composing variable that combines total Fsize and Surname
+all$FsizeName &lt;- paste(as.character(all$Fsize), all$Surname, sep=&quot;&quot;)
+
+SizeCheck &lt;- all %&gt;%
+        group_by(FsizeName, Fsize) %&gt;%
+        summarise(NumObs=n())
+SizeCheck$NumFam &lt;- SizeCheck$NumObs/SizeCheck$Fsize
+SizeCheck$modulo &lt;- SizeCheck$NumObs %% SizeCheck$Fsize
+SizeCheck &lt;- SizeCheck[SizeCheck$modulo !=0,]
+sum(SizeCheck$NumObs) #total number of Observations with inconsistencies</code></pre>
+<pre><code>## [1] 93</code></pre>
+<pre class="r"><code>kable(SizeCheck[SizeCheck$FsizeName %in% c(&#39;3Davies&#39;, &#39;5Hocking&#39;, &#39;6Richards&#39;, &#39;2Wilkes&#39;, &#39;3Richards&#39;, &#39;4Hocking&#39;),]) #only display some inconsistencies that are discussed in the text</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">FsizeName</th>
+<th align="right">Fsize</th>
+<th align="right">NumObs</th>
+<th align="right">NumFam</th>
+<th align="right">modulo</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">2Wilkes</td>
+<td align="right">2</td>
+<td align="right">1</td>
+<td align="right">0.5000000</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">3Davies</td>
+<td align="right">3</td>
+<td align="right">5</td>
+<td align="right">1.6666667</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="left">3Richards</td>
+<td align="right">3</td>
+<td align="right">2</td>
+<td align="right">0.6666667</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="left">4Hocking</td>
+<td align="right">4</td>
+<td align="right">2</td>
+<td align="right">0.5000000</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="left">5Hocking</td>
+<td align="right">5</td>
+<td align="right">1</td>
+<td align="right">0.2000000</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td align="left">6Richards</td>
+<td align="right">6</td>
+<td align="right">1</td>
+<td align="right">0.1666667</td>
+<td align="right">1</td>
+</tr>
+</tbody>
+</table>
+<p>As you can see, this check does not always add up to a round number of families (for a total of 93 passengers). A quick internet search learns us that the passenger list seems complete as there were around 1300 passengers on board indeed (the rest of the people on the boat were crew). Some inconsistencies can likely be explained by cancellations (SibSp and Parch info not updated after a cancellation). For instance: there must have been two Davies families on board, while the SizeCheck only shows five obervations for FsizeName ‘3Davies’.</p>
+<pre class="r"><code>kable(all[all$FsizeName==&#39;3Davies&#39;,c(2,3,14,5,6,7,8,17,9,15)])</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th align="left">Survived</th>
+<th align="left">Pclass</th>
+<th align="left">Surname</th>
+<th align="left">Sex</th>
+<th align="right">Age</th>
+<th align="right">SibSp</th>
+<th align="right">Parch</th>
+<th align="left">FsizeName</th>
+<th align="left">Ticket</th>
+<th align="left">Title</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>550</td>
+<td align="left">1</td>
+<td align="left">2</td>
+<td align="left">Davies</td>
+<td align="left">male</td>
+<td align="right">8</td>
+<td align="right">1</td>
+<td align="right">1</td>
+<td align="left">3Davies</td>
+<td align="left">C.A. 33112</td>
+<td align="left">Master</td>
+</tr>
+<tr class="even">
+<td>566</td>
+<td align="left">0</td>
+<td align="left">3</td>
+<td align="left">Davies</td>
+<td align="left">male</td>
+<td align="right">24</td>
+<td align="right">2</td>
+<td align="right">0</td>
+<td align="left">3Davies</td>
+<td align="left">A/4 48871</td>
+<td align="left">Mr</td>
+</tr>
+<tr class="odd">
+<td>901</td>
+<td align="left">NA</td>
+<td align="left">3</td>
+<td align="left">Davies</td>
+<td align="left">male</td>
+<td align="right">21</td>
+<td align="right">2</td>
+<td align="right">0</td>
+<td align="left">3Davies</td>
+<td align="left">A/4 48871</td>
+<td align="left">Mr</td>
+</tr>
+<tr class="even">
+<td>1079</td>
+<td align="left">NA</td>
+<td align="left">3</td>
+<td align="left">Davies</td>
+<td align="left">male</td>
+<td align="right">17</td>
+<td align="right">2</td>
+<td align="right">0</td>
+<td align="left">3Davies</td>
+<td align="left">A/4 48873</td>
+<td align="left">Mr</td>
+</tr>
+<tr class="odd">
+<td>1222</td>
+<td align="left">NA</td>
+<td align="left">2</td>
+<td align="left">Davies</td>
+<td align="left">female</td>
+<td align="right">48</td>
+<td align="right">0</td>
+<td align="right">2</td>
+<td align="left">3Davies</td>
+<td align="left">C.A. 33112</td>
+<td align="left">Mrs</td>
+</tr>
+</tbody>
+</table>
+<p>The Davies’ on Tickets A/4 48871 and A/4 48873 are very likely a complete group. The error seems to be that Mrs Davies [1222] was supposed to travel with 2 children, but eventually only traveled with one son (Master Davies [550]). A quick internet search told me that a person with the name Davies cancelled his trip indeed due to illness. Let’s correct this info.</p>
+<pre class="r"><code>all$FsizeName[c(550, 1222)] &lt;- &#39;2Davies&#39;
+all$SibSp[550] &lt;- 0
+all$Parch[1222] &lt;- 1
+all$Fsize[c(550, 1222)] &lt;- 2
+kable(all[all$FsizeName==&#39;2Davies&#39;,c(2,3,14,5,6,7,8,17,9,15)])</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th align="left">Survived</th>
+<th align="left">Pclass</th>
+<th align="left">Surname</th>
+<th align="left">Sex</th>
+<th align="right">Age</th>
+<th align="right">SibSp</th>
+<th align="right">Parch</th>
+<th align="left">FsizeName</th>
+<th align="left">Ticket</th>
+<th align="left">Title</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>550</td>
+<td align="left">1</td>
+<td align="left">2</td>
+<td align="left">Davies</td>
+<td align="left">male</td>
+<td align="right">8</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="left">2Davies</td>
+<td align="left">C.A. 33112</td>
+<td align="left">Master</td>
+</tr>
+<tr class="even">
+<td>1222</td>
+<td align="left">NA</td>
+<td align="left">2</td>
+<td align="left">Davies</td>
+<td align="left">female</td>
+<td align="right">48</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="left">2Davies</td>
+<td align="left">C.A. 33112</td>
+<td align="left">Mrs</td>
+</tr>
+</tbody>
+</table>
+<p>I believe that there could be more cancellations that were not administered fully correctly, but I also think that the effects on the final models is likely to be very minor. So let’s move on to the next section quickly.</p>
+</div>
+<div id="families-what-about-uncles-aunts-cousins-nieces-grandparents-brotherssisters-in-law" class="section level3">
+<h3><span class="header-section-number">4.2.3</span> Families; what about uncles, aunts, cousins, nieces, grandparents, brothers/sisters-in law?</h3>
+<p>I found out that there is something ‘hidden’ in this information that seems more interesting than a few cancellations. For instance, it turns out that the Hockings and the Richards’ are related. The connection here is that passenger 438 travels with 2 children, 1 parent, a brother and a sister. For her, all these people count are direct family. However, other people are linked indirectly. For the 2 children for instance, only the brother and mother count as direct family. This leads to Fsizes that cannot be compared to most families as ‘apples to apples’. Their Fsizes are generally too high, as it is likely that those people have split up into smaller groups. The mother may have stayed with her children, while the brother and sister probably have stayed with the grandmother.</p>
+<p>Note: this family is actually even more complex, as the grandmother also travels with a sister with the same maiden name. However, as this really seems an exception and the other Mrs Needs already has the very reasonable Fsize of 2 (it’s Mrs Wilkes Needs), I am not taking her into consideration.</p>
+<pre class="r"><code>kable(all[all$Ticket %in% c(&#39;29104&#39;, &#39;29105&#39;, &#39;29106&#39;),c(2,3,4,5,6,7,8,9,15)])</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th align="left">Survived</th>
+<th align="left">Pclass</th>
+<th align="left">Name</th>
+<th align="left">Sex</th>
+<th align="right">Age</th>
+<th align="right">SibSp</th>
+<th align="right">Parch</th>
+<th align="left">Ticket</th>
+<th align="left">Title</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>408</td>
+<td align="left">1</td>
+<td align="left">2</td>
+<td align="left">Richards, Master. William Rowe</td>
+<td align="left">male</td>
+<td align="right">3.00</td>
+<td align="right">1</td>
+<td align="right">1</td>
+<td align="left">29106</td>
+<td align="left">Master</td>
+</tr>
+<tr class="even">
+<td>438</td>
+<td align="left">1</td>
+<td align="left">2</td>
+<td align="left">Richards, Mrs. Sidney (Emily Hocking)</td>
+<td align="left">female</td>
+<td align="right">24.00</td>
+<td align="right">2</td>
+<td align="right">3</td>
+<td align="left">29106</td>
+<td align="left">Mrs</td>
+</tr>
+<tr class="odd">
+<td>530</td>
+<td align="left">0</td>
+<td align="left">2</td>
+<td align="left">Hocking, Mr. Richard George</td>
+<td align="left">male</td>
+<td align="right">23.00</td>
+<td align="right">2</td>
+<td align="right">1</td>
+<td align="left">29104</td>
+<td align="left">Mr</td>
+</tr>
+<tr class="even">
+<td>775</td>
+<td align="left">1</td>
+<td align="left">2</td>
+<td align="left">Hocking, Mrs. Elizabeth (Eliza Needs)</td>
+<td align="left">female</td>
+<td align="right">54.00</td>
+<td align="right">1</td>
+<td align="right">3</td>
+<td align="left">29105</td>
+<td align="left">Mrs</td>
+</tr>
+<tr class="odd">
+<td>832</td>
+<td align="left">1</td>
+<td align="left">2</td>
+<td align="left">Richards, Master. George Sibley</td>
+<td align="left">male</td>
+<td align="right">0.83</td>
+<td align="right">1</td>
+<td align="right">1</td>
+<td align="left">29106</td>
+<td align="left">Master</td>
+</tr>
+<tr class="even">
+<td>944</td>
+<td align="left">NA</td>
+<td align="left">2</td>
+<td align="left">Hocking, Miss. Ellen Nellie“”</td>
+<td align="left">female</td>
+<td align="right">20.00</td>
+<td align="right">2</td>
+<td align="right">1</td>
+<td align="left">29105</td>
+<td align="left">Miss</td>
+</tr>
+</tbody>
+</table>
+<p>In order to fix this, I first have to ‘glue’ those families together using maiden names.</p>
+<pre class="r"><code>NC &lt;- all[all$FsizeName %in% SizeCheck$FsizeName,] #create data frame with only relevant Fsizenames
+
+#extracting maiden names
+NC$Name &lt;- sub(&quot;\\s$&quot;, &quot;&quot;, NC$Name) #removing spaces at end Name
+NC$Maiden &lt;- sub(&quot;.*[^\\)]$&quot;, &quot;&quot;, NC$Name) #remove when not ending with &#39;)&#39;
+NC$Maiden &lt;- sub(&quot;.*\\s(.*)\\)$&quot;, &quot;\\1&quot;, NC$Maiden)
+NC$Maiden[NC$Title!=&#39;Mrs&#39;] &lt;- &quot;&quot; #cleaning up other stuff between brackets (including Nickname of a Mr)
+NC$Maiden &lt;- sub(&quot;^\\(&quot;, &#39;&#39;, NC$Maiden) #removing opening brackets (sometimes single name, no spaces between brackets)
+#making an exceptions match
+NC$Maiden[NC$Name==&#39;Andersen-Jensen, Miss. Carla Christine Nielsine&#39;] &lt;- &#39;Jensen&#39;
+
+#take only Maiden names that also exist as surname in other Observations
+NC$Maiden2[NC$Maiden %in% NC$Surname] &lt;- NC$Maiden[NC$Maiden %in% NC$Surname] 
+#create surname+maiden name combinations
+NC$Combi[!is.na(NC$Maiden2)] &lt;- paste(NC$Surname[!is.na(NC$Maiden2)], NC$Maiden[!is.na(NC$Maiden2)])
+
+#create labels dataframe with surname and maiden merged into one column
+labels1 &lt;- NC[!is.na(NC$Combi), c(&#39;Surname&#39;,&#39;Combi&#39;)]
+labels2 &lt;- NC[!is.na(NC$Combi), c(&#39;Maiden&#39;,&#39;Combi&#39;)]
+colnames(labels2) &lt;- c(&#39;Surname&#39;, &#39;Combi&#39;)
+labels1 &lt;- rbind(labels1, labels2)
+
+NC$Combi &lt;- NULL
+NC &lt;- left_join(NC, labels1, by=&#39;Surname&#39;)
+
+#Find the maximum Fsize within each newly found &#39;second degree&#39; family
+CombiMaxF &lt;- NC[!is.na(NC$Combi),] %&gt;%
+        group_by(Combi) %&gt;%
+        summarise(MaxF=max(Fsize)) #summarise(MaxF=n())
+NC &lt;- left_join(NC, CombiMaxF, by = &quot;Combi&quot;)
+
+#create family names for those larger families
+NC$FsizeCombi[!is.na(NC$Combi)] &lt;- paste(as.character(NC$Fsize[!is.na(NC$Combi)]), NC$Combi[!is.na(NC$Combi)], sep=&quot;&quot;)
+
+#find the ones in which not all Fsizes are the same
+FamMaid &lt;- NC[!is.na(NC$FsizeCombi),] %&gt;%
+        group_by(FsizeCombi, MaxF, Fsize) %&gt;%
+        summarise(NumObs=n())
+FamMaidWrong &lt;- FamMaid[FamMaid$MaxF!=FamMaid$NumObs,]
+
+kable(unique(NC[!is.na(NC$Combi) &amp; NC$FsizeCombi %in% FamMaidWrong$FsizeCombi, c(&#39;Combi&#39;, &#39;MaxF&#39;)]))</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th align="left">Combi</th>
+<th align="right">MaxF</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>7</td>
+<td align="left">Backstrom Gustafsson</td>
+<td align="right">4</td>
+</tr>
+<tr class="even">
+<td>15</td>
+<td align="left">Strom Persson</td>
+<td align="right">3</td>
+</tr>
+<tr class="odd">
+<td>17</td>
+<td align="left">Jacobsohn Christy</td>
+<td align="right">4</td>
+</tr>
+<tr class="even">
+<td>30</td>
+<td align="left">Richards Hocking</td>
+<td align="right">6</td>
+</tr>
+<tr class="odd">
+<td>34</td>
+<td align="left">Renouf Jefferys</td>
+<td align="right">4</td>
+</tr>
+<tr class="even">
+<td>35</td>
+<td align="left">Hirvonen Lindqvist</td>
+<td align="right">3</td>
+</tr>
+<tr class="odd">
+<td>50</td>
+<td align="left">Davidson Hays</td>
+<td align="right">4</td>
+</tr>
+</tbody>
+</table>
+<p>As you can see, 7 combinations (total of 28 passengers) are found as families with not all members having the same Fsize, which means that they are broader families with non-direct family links included. Before I decided what to do with these, I first have to find the families who are similarly linked on the ‘male’ side.</p>
+<pre class="r"><code>NC$MaxF &lt;- NULL #erasing MaxF column maiden combi&#39;s
+
+#Find the maximum Fsize within remaining families (no maiden combi&#39;s)
+FamMale &lt;- NC[is.na(NC$Combi),] %&gt;%
+        group_by(Surname) %&gt;%
+        summarise(MaxF=max(Fsize))
+NC &lt;- left_join(NC, FamMale, by = &quot;Surname&quot;)
+
+NCMale &lt;- NC[is.na(NC$Combi),] %&gt;%
+        group_by(Surname, FsizeName, MaxF) %&gt;%
+        summarise(count=n()) %&gt;%
+        group_by(Surname, MaxF) %&gt;%
+        filter(n()&gt;1) %&gt;%
+        summarise(NumFsizes=n())
+
+NC$Combi[NC$Surname %in% NCMale$Surname] &lt;- NC$Surname[NC$Surname %in% NCMale$Surname]
+
+kable(NCMale[, c(1,2)])</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Surname</th>
+<th align="right">MaxF</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Kink</td>
+<td align="right">5</td>
+</tr>
+<tr class="even">
+<td align="left">Vander Planke</td>
+<td align="right">4</td>
+</tr>
+</tbody>
+</table>
+<p>Example. Mr Julius Vander Planke is traveling with a spouse and 2 siblings. His spouse and siblings (brothers/sisters-in-law) are ‘indirectly’ related to each other.</p>
+<pre class="r"><code>kable(all[all$Surname==&#39;Vander Planke&#39;, c(2,3,4,5,6,7,8,9,15)])</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th align="left">Survived</th>
+<th align="left">Pclass</th>
+<th align="left">Name</th>
+<th align="left">Sex</th>
+<th align="right">Age</th>
+<th align="right">SibSp</th>
+<th align="right">Parch</th>
+<th align="left">Ticket</th>
+<th align="left">Title</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>19</td>
+<td align="left">0</td>
+<td align="left">3</td>
+<td align="left">Vander Planke, Mrs. Julius (Emelia Maria Vandemoortele)</td>
+<td align="left">female</td>
+<td align="right">31</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="left">345763</td>
+<td align="left">Mrs</td>
+</tr>
+<tr class="even">
+<td>39</td>
+<td align="left">0</td>
+<td align="left">3</td>
+<td align="left">Vander Planke, Miss. Augusta Maria</td>
+<td align="left">female</td>
+<td align="right">18</td>
+<td align="right">2</td>
+<td align="right">0</td>
+<td align="left">345764</td>
+<td align="left">Miss</td>
+</tr>
+<tr class="odd">
+<td>334</td>
+<td align="left">0</td>
+<td align="left">3</td>
+<td align="left">Vander Planke, Mr. Leo Edmondus</td>
+<td align="left">male</td>
+<td align="right">16</td>
+<td align="right">2</td>
+<td align="right">0</td>
+<td align="left">345764</td>
+<td align="left">Mr</td>
+</tr>
+<tr class="even">
+<td>1037</td>
+<td align="left">NA</td>
+<td align="left">3</td>
+<td align="left">Vander Planke, Mr. Julius</td>
+<td align="left">male</td>
+<td align="right">31</td>
+<td align="right">3</td>
+<td align="right">0</td>
+<td align="left">345763</td>
+<td align="left">Mr</td>
+</tr>
+</tbody>
+</table>
+<p>This means that altogether, there are 9 families (37 passengers) that include ‘second degree’ family members. What I want to do is give each member in such family the same Fsize (which gives everybody in these families the same survival chances with regards to the group variable). I have chosen to make this the average of the Fsize (which are based on siblings/spouse/parents/children only).</p>
+<pre class="r"><code>#selecting those 37 passengers In Not Correct dataframe
+NC &lt;- NC[(NC$FsizeCombi %in% FamMaidWrong$FsizeCombi)|(NC$Surname %in% NCMale$Surname),]
+
+#calculating the average Fsize for those 9 families
+NC1 &lt;- NC %&gt;%
+        group_by(Combi) %&gt;%
+        summarise(Favg=mean(Fsize))
+kable(NC1)</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Combi</th>
+<th align="right">Favg</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Backstrom Gustafsson</td>
+<td align="right">3.000000</td>
+</tr>
+<tr class="even">
+<td align="left">Davidson Hays</td>
+<td align="right">3.000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Hirvonen Lindqvist</td>
+<td align="right">2.333333</td>
+</tr>
+<tr class="even">
+<td align="left">Jacobsohn Christy</td>
+<td align="right">3.000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Kink</td>
+<td align="right">3.400000</td>
+</tr>
+<tr class="even">
+<td align="left">Renouf Jefferys</td>
+<td align="right">3.000000</td>
+</tr>
+<tr class="odd">
+<td align="left">Richards Hocking</td>
+<td align="right">4.166667</td>
+</tr>
+<tr class="even">
+<td align="left">Strom Persson</td>
+<td align="right">2.333333</td>
+</tr>
+<tr class="odd">
+<td align="left">Vander Planke</td>
+<td align="right">3.000000</td>
+</tr>
+</tbody>
+</table>
+<p>A result is that for instance the Fsize is 4 for all 6 people in the Richards-Hockings family. This exactly what I wanted, as I wanted to combine those people into a group with all members having the same Fsize (to give equal survival chances to all members within the group) but also not the maximum size as they are less likely to stay together than first degree families.</p>
+<pre class="r"><code>NC &lt;- left_join(NC, NC1, by = &quot;Combi&quot;) #adding Favg to NC dataframe 
+NC$Favg &lt;- round(NC$Favg) #rounding those averages to integers
+NC &lt;- NC[, c(&#39;PassengerId&#39;, &#39;Favg&#39;)]
+all &lt;- left_join(all, NC, by=&#39;PassengerId&#39;)
+
+#replacing Fsize by Favg
+all$Fsize[!is.na(all$Favg)] &lt;- all$Favg[!is.na(all$Favg)]</code></pre>
+</div>
+<div id="can-we-still-find-more-second-degree-families" class="section level3">
+<h3><span class="header-section-number">4.2.4</span> Can we still find more second degree families?</h3>
+<p>Am I still missing some second degree families? Yes, at it appears that some people traveling solo with the same surname have tickets with almost the same number!</p>
+<pre class="r"><code>#creating a variable with almost the same ticket numbers (only last 2 digits varying)
+all$Ticket2 &lt;- sub(&quot;..$&quot;, &quot;xx&quot;, all$Ticket)</code></pre>
+<p>As they have no sibling/spouses and no parents/children, these people are likely cousins/uncles. If you look deeper into the data, you will see that these groups of cousins/uncles sometimes also travel with (first degree) families. However, I think the key to this exercise is not to find the absolute largest groups that people may have stayed together with. I think it should be to detect smaller groups that actually stayed together. It sounds reasonable to assume that first degree families stayed together, and that uncles/cousins also took care of each other (this is consistent with the averaging of the Fsizes in the previous section). Altogether, I have found another 56 passengers that I can assign a group size to.</p>
+<pre class="r"><code>rest &lt;- all %&gt;%
+        select(PassengerId, Title, Age, Ticket, Ticket2, Surname, Fsize) %&gt;%
+        filter(Fsize==&#39;1&#39;) %&gt;%
+        group_by(Ticket2, Surname) %&gt;%
+        summarise(count=n())
+rest &lt;- rest[rest$count&gt;1,]
+rest1 &lt;- all[(all$Ticket2 %in% rest$Ticket2 &amp; all$Surname %in% rest$Surname &amp; all$Fsize==&#39;1&#39;), c(&#39;PassengerId&#39;, &#39;Surname&#39;, &#39;Title&#39;, &#39;Age&#39;, &#39;Ticket&#39;, &#39;Ticket2&#39;, &#39;Fsize&#39;, &#39;SibSp&#39;, &#39;Parch&#39;)]
+rest1 &lt;- left_join(rest1, rest, by = c(&quot;Surname&quot;, &quot;Ticket2&quot;))
+rest1 &lt;- rest1[!is.na(rest1$count),]
+rest1 &lt;- rest1 %&gt;%
+        arrange(Surname, Ticket2)
+kable(rest1[1:12,])</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="right">PassengerId</th>
+<th align="left">Surname</th>
+<th align="left">Title</th>
+<th align="right">Age</th>
+<th align="left">Ticket</th>
+<th align="left">Ticket2</th>
+<th align="right">Fsize</th>
+<th align="right">SibSp</th>
+<th align="right">Parch</th>
+<th align="right">count</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">949</td>
+<td align="left">Abelseth</td>
+<td align="left">Mr</td>
+<td align="right">25</td>
+<td align="left">348122</td>
+<td align="left">3481xx</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="right">1237</td>
+<td align="left">Abelseth</td>
+<td align="left">Miss</td>
+<td align="right">16</td>
+<td align="left">348125</td>
+<td align="left">3481xx</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="right">211</td>
+<td align="left">Ali</td>
+<td align="left">Mr</td>
+<td align="right">24</td>
+<td align="left">SOTON/O.Q. 3101311</td>
+<td align="left">SOTON/O.Q. 31013xx</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="right">785</td>
+<td align="left">Ali</td>
+<td align="left">Mr</td>
+<td align="right">25</td>
+<td align="left">SOTON/O.Q. 3101312</td>
+<td align="left">SOTON/O.Q. 31013xx</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="right">115</td>
+<td align="left">Attalah</td>
+<td align="left">Miss</td>
+<td align="right">17</td>
+<td align="left">2627</td>
+<td align="left">26xx</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="right">245</td>
+<td align="left">Attalah</td>
+<td align="left">Mr</td>
+<td align="right">30</td>
+<td align="left">2694</td>
+<td align="left">26xx</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="right">379</td>
+<td align="left">Betros</td>
+<td align="left">Mr</td>
+<td align="right">20</td>
+<td align="left">2648</td>
+<td align="left">26xx</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td align="right">1231</td>
+<td align="left">Betros</td>
+<td align="left">Master</td>
+<td align="right">NA</td>
+<td align="left">2622</td>
+<td align="left">26xx</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td align="right">472</td>
+<td align="left">Cacic</td>
+<td align="left">Mr</td>
+<td align="right">38</td>
+<td align="left">315089</td>
+<td align="left">3150xx</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">4</td>
+</tr>
+<tr class="even">
+<td align="right">535</td>
+<td align="left">Cacic</td>
+<td align="left">Miss</td>
+<td align="right">30</td>
+<td align="left">315084</td>
+<td align="left">3150xx</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">4</td>
+</tr>
+<tr class="odd">
+<td align="right">929</td>
+<td align="left">Cacic</td>
+<td align="left">Miss</td>
+<td align="right">21</td>
+<td align="left">315087</td>
+<td align="left">3150xx</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">4</td>
+</tr>
+<tr class="even">
+<td align="right">1202</td>
+<td align="left">Cacic</td>
+<td align="left">Mr</td>
+<td align="right">18</td>
+<td align="left">315091</td>
+<td align="left">3150xx</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">4</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>#replacing Fsize size in my overall dataframe with the count numbers in the table above
+all &lt;- left_join(all, rest1)</code></pre>
+<pre><code>## Joining, by = c(&quot;PassengerId&quot;, &quot;Age&quot;, &quot;SibSp&quot;, &quot;Parch&quot;, &quot;Ticket&quot;, &quot;Surname&quot;, &quot;Title&quot;, &quot;Fsize&quot;, &quot;Ticket2&quot;)</code></pre>
+<pre class="r"><code>for (i in 1:nrow(all)){
+        if (!is.na(all$count[i])){
+                all$Fsize[i] &lt;- all$count[i]
+        }
+}</code></pre>
+</div>
+<div id="did-people-book-together" class="section level3">
+<h3><span class="header-section-number">4.2.5</span> Did people book together?</h3>
+<p>Besides families, groups of friends can off course also travel together. A nice example of this is the ticket below.</p>
+<pre class="r"><code>kable(all[all$Ticket==&#39;1601&#39;, c(&#39;Survived&#39;, &#39;Pclass&#39;, &#39;Title&#39;, &#39;Surname&#39;, &#39;Age&#39;, &#39;Ticket&#39;, &#39;SibSp&#39;, &#39;Parch&#39;, &#39;Fsize&#39;)])</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th align="left">Survived</th>
+<th align="left">Pclass</th>
+<th align="left">Title</th>
+<th align="left">Surname</th>
+<th align="right">Age</th>
+<th align="left">Ticket</th>
+<th align="right">SibSp</th>
+<th align="right">Parch</th>
+<th align="right">Fsize</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>75</td>
+<td align="left">1</td>
+<td align="left">3</td>
+<td align="left">Mr</td>
+<td align="left">Bing</td>
+<td align="right">32</td>
+<td align="left">1601</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td>170</td>
+<td align="left">0</td>
+<td align="left">3</td>
+<td align="left">Mr</td>
+<td align="left">Ling</td>
+<td align="right">28</td>
+<td align="left">1601</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td>510</td>
+<td align="left">1</td>
+<td align="left">3</td>
+<td align="left">Mr</td>
+<td align="left">Lang</td>
+<td align="right">26</td>
+<td align="left">1601</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td>644</td>
+<td align="left">1</td>
+<td align="left">3</td>
+<td align="left">Mr</td>
+<td align="left">Foo</td>
+<td align="right">NA</td>
+<td align="left">1601</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td>693</td>
+<td align="left">1</td>
+<td align="left">3</td>
+<td align="left">Mr</td>
+<td align="left">Lam</td>
+<td align="right">NA</td>
+<td align="left">1601</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td>827</td>
+<td align="left">0</td>
+<td align="left">3</td>
+<td align="left">Mr</td>
+<td align="left">Lam</td>
+<td align="right">NA</td>
+<td align="left">1601</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td>839</td>
+<td align="left">1</td>
+<td align="left">3</td>
+<td align="left">Mr</td>
+<td align="left">Chip</td>
+<td align="right">32</td>
+<td align="left">1601</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">1</td>
+</tr>
+<tr class="even">
+<td>931</td>
+<td align="left">NA</td>
+<td align="left">3</td>
+<td align="left">Mr</td>
+<td align="left">Hee</td>
+<td align="right">NA</td>
+<td align="left">1601</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">1</td>
+</tr>
+</tbody>
+</table>
+<p>Below, I am adding the number of people on each ticket as variable.</p>
+<pre class="r"><code>#composing data frame with group size for each Ticket
+TicketGroup &lt;- all %&gt;%
+        select(Ticket) %&gt;%
+        group_by(Ticket) %&gt;%
+        summarise(Tsize=n())
+all &lt;- left_join(all, TicketGroup, by = &quot;Ticket&quot;)</code></pre>
+<p>Very similarly to the family group sizes, small groups of 2-4 people traveling together on the same ticket have a higher chance of survival.</p>
+<pre class="r"><code>ggplot(all[!is.na(all$Survived),], aes(x = Tsize, fill = Survived)) +
+  geom_bar(stat=&#39;count&#39;, position=&#39;dodge&#39;) +
+  scale_x_continuous(breaks=c(1:11)) +
+  labs(x = &#39;Ticket Size&#39;) + theme_grey()</code></pre>
+<p><img src="__results___files/figure-html/unnamed-chunk-30-1.png" width="672" /></p>
+<p>As there is so much overlap between family size and ticket size, I am consolidating these two variables into one group variable. Now I can finally created my factorized variable for the group sizes.</p>
+<pre class="r"><code>#taking the max of family and ticket size as the group size
+all$Group &lt;- all$Fsize
+for (i in 1:nrow(all)){
+           all$Group[i] &lt;- max(all$Group[i], all$Tsize[i])
+}
+
+#Creating final group categories
+all$GroupSize[all$Group==1] &lt;- &#39;solo&#39;
+all$GroupSize[all$Group==2] &lt;- &#39;duo&#39;
+all$GroupSize[all$Group&gt;=3 &amp; all$Group&lt;=4] &lt;- &#39;group&#39;
+all$GroupSize[all$Group&gt;=5] &lt;- &#39;large group&#39;
+all$GroupSize &lt;- as.factor(all$GroupSize)</code></pre>
+<p>As ‘1’ and ‘2’ are large groups with their own typical survival rates, I am keeping them as separate groups. Sizes ‘3’ and ‘4’ clearly have the best survival chances, and the groups of 5 and more clearly have worse chances.</p>
+<pre class="r"><code>g1 &lt;- ggplot(all[!is.na(all$Survived),], aes(x = Group, fill = Survived)) +
+  geom_bar(stat=&#39;count&#39;, position=&#39;dodge&#39;) +
+  scale_x_continuous(breaks=c(1:11)) +
+  labs(x = &#39;Final Group Sizes&#39;) + theme_grey()
+
+g2 &lt;- ggplot(all[!is.na(all$Survived),], aes(x = GroupSize, fill = Survived)) +
+  geom_bar(stat=&#39;count&#39;, position=&#39;dodge&#39;) +
+  labs(x = &#39;Final Group Categories&#39;) + theme_grey() +
+        scale_x_discrete (limits = c(&#39;solo&#39;, &#39;duo&#39;, &#39;group&#39;, &#39;large group&#39;))
+grid.arrange(g2, g1)</code></pre>
+<p><img src="__results___files/figure-html/unnamed-chunk-32-1.png" width="672" /></p>
+</div>
+</div>
+<div id="dealing-with-the-fare-variable" class="section level2">
+<h2><span class="header-section-number">4.3</span> Dealing with the Fare variable</h2>
+<div id="which-data-relevant-to-fare-are-missing" class="section level3">
+<h3><span class="header-section-number">4.3.1</span> Which data relevant to fare are missing?</h3>
+<p>There are two missing values in Embarked, and one in Fare. Embarked could be important to Fare, as different Embarkement cities mean longer or shorter journeys.</p>
+<pre class="r"><code>#display passengers with missing Embarked
+kable(all[which(is.na(all$Embarked)),c(&#39;Surname&#39;, &#39;Title&#39;, &#39;Survived&#39;, &#39;Pclass&#39;, &#39;Age&#39;, &#39;SibSp&#39;, &#39;Parch&#39;, &#39;Ticket&#39;, &#39;Fare&#39;, &#39;Cabin&#39;, &#39;Embarked&#39;, &#39;Group&#39;) ])</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th align="left">Surname</th>
+<th align="left">Title</th>
+<th align="left">Survived</th>
+<th align="left">Pclass</th>
+<th align="right">Age</th>
+<th align="right">SibSp</th>
+<th align="right">Parch</th>
+<th align="left">Ticket</th>
+<th align="right">Fare</th>
+<th align="left">Cabin</th>
+<th align="left">Embarked</th>
+<th align="right">Group</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>62</td>
+<td align="left">Icard</td>
+<td align="left">Miss</td>
+<td align="left">1</td>
+<td align="left">1</td>
+<td align="right">38</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="left">113572</td>
+<td align="right">80</td>
+<td align="left">B28</td>
+<td align="left">NA</td>
+<td align="right">2</td>
+</tr>
+<tr class="even">
+<td>830</td>
+<td align="left">Stone</td>
+<td align="left">Mrs</td>
+<td align="left">1</td>
+<td align="left">1</td>
+<td align="right">62</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="left">113572</td>
+<td align="right">80</td>
+<td align="left">B28</td>
+<td align="left">NA</td>
+<td align="right">2</td>
+</tr>
+</tbody>
+</table>
+<p>Both women are traveling solo from a family perspective (Fsize=1), but must be friends as they are both are traveling on ticket 113572 (nobody else was traveling on this ticket, so Group=2). Both also have the same fare, but this fare might still have been per person. I came to the conclusion that prices are indeed per ticket. As the explanation was getting lengthy, I will now just continue under the assumption that fares are per person.</p>
+<p>I want to impute the missing embarkement city with the median Fare Per Person for each Embarkement city, and per Pclass.</p>
+<pre class="r"><code>all$FarePP &lt;- all$Fare/all$Tsize #creating the Fare Per Person variable
+
+tab2 &lt;- all[(!is.na(all$Embarked) &amp; !is.na(all$Fare)),] %&gt;%
+        group_by(Embarked, Pclass) %&gt;%
+        summarise(FarePP=median(FarePP))
+kable(tab2)</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Embarked</th>
+<th align="left">Pclass</th>
+<th align="right">FarePP</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">C</td>
+<td align="left">1</td>
+<td align="right">34.6500</td>
+</tr>
+<tr class="even">
+<td align="left">C</td>
+<td align="left">2</td>
+<td align="right">13.8583</td>
+</tr>
+<tr class="odd">
+<td align="left">C</td>
+<td align="left">3</td>
+<td align="right">7.2271</td>
+</tr>
+<tr class="even">
+<td align="left">Q</td>
+<td align="left">1</td>
+<td align="right">30.0000</td>
+</tr>
+<tr class="odd">
+<td align="left">Q</td>
+<td align="left">2</td>
+<td align="right">12.3500</td>
+</tr>
+<tr class="even">
+<td align="left">Q</td>
+<td align="left">3</td>
+<td align="right">7.7500</td>
+</tr>
+<tr class="odd">
+<td align="left">S</td>
+<td align="left">1</td>
+<td align="right">26.5500</td>
+</tr>
+<tr class="even">
+<td align="left">S</td>
+<td align="left">2</td>
+<td align="right">11.5000</td>
+</tr>
+<tr class="odd">
+<td align="left">S</td>
+<td align="left">3</td>
+<td align="right">7.7958</td>
+</tr>
+</tbody>
+</table>
+<p>As the FarePP of those two women is 40, they most likely embarked at Cherbourgh.</p>
+<pre class="r"><code>#imputing missing Embarked values
+all$Embarked[all$Ticket==&#39;113572&#39;] &lt;- &#39;C&#39;
+#converting Embarked into a factor
+all$Embarked &lt;- as.factor(all$Embarked)</code></pre>
+<p>I can actually use the same table to find a sensible fare for Mr Story. As you can see below, he traveled 3rd class and embarked at Southampton.</p>
+<pre class="r"><code>#display passengers with missing Fare
+kable(all[which(is.na(all$Fare)), c(&#39;Surname&#39;, &#39;Title&#39;, &#39;Survived&#39;, &#39;Pclass&#39;, &#39;Age&#39;, &#39;SibSp&#39;, &#39;Parch&#39;, &#39;Ticket&#39;, &#39;Fare&#39;, &#39;Cabin&#39;, &#39;Embarked&#39;, &#39;Group&#39;)])</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th align="left">Surname</th>
+<th align="left">Title</th>
+<th align="left">Survived</th>
+<th align="left">Pclass</th>
+<th align="right">Age</th>
+<th align="right">SibSp</th>
+<th align="right">Parch</th>
+<th align="left">Ticket</th>
+<th align="right">Fare</th>
+<th align="left">Cabin</th>
+<th align="left">Embarked</th>
+<th align="right">Group</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1044</td>
+<td align="left">Storey</td>
+<td align="left">Mr</td>
+<td align="left">NA</td>
+<td align="left">3</td>
+<td align="right">60.5</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="left">3701</td>
+<td align="right">NA</td>
+<td align="left">NA</td>
+<td align="left">S</td>
+<td align="right">1</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>#imputing FarePP (as the Fare will be dropped later on anyway)
+all$FarePP[1044] &lt;- 7.8</code></pre>
+</div>
+<div id="the-fare-per-person-variable" class="section level3">
+<h3><span class="header-section-number">4.3.2</span> The Fare Per Person Variable</h3>
+<p>Although there now are no missing FarePP’s anymore, I also noticed that 17 Fares actually have the value 0. These people are not children that might have traveled for free. I think the information might actually be correct (have people won free tickets?), but I also think that the zero-Fares might confuse the algorithm. For instance, there are zero-Fares within the 1st class passengers. To avoid this possible confusion, I am replacing these values by the median FarePP’s for each Pclass.</p>
+<pre class="r"><code>tab3 &lt;- all[(!is.na(all$FarePP)),] %&gt;%
+        group_by(Pclass) %&gt;%
+        summarise(MedianFarePP=median(FarePP))
+all &lt;- left_join(all, tab3, by = &quot;Pclass&quot;)
+all$FarePP[which(all$FarePP==0)] &lt;- all$MedianFarePP[which(all$FarePP==0)]</code></pre>
+<p>Below you can see that the FarePP is very skewed. I know that this is not desirable for some algorithms, and can be solved by taking the logarithm or normalisation (preprocessing with centering and scaling).</p>
+<pre class="r"><code>ggplot(all, aes(x=FarePP)) +
+        geom_histogram(binwidth = 5, fill=&#39;blue&#39;) + theme_grey() +
+        scale_x_continuous(breaks= seq(0, 150, by=10))</code></pre>
+<p><img src="__results___files/figure-html/unnamed-chunk-40-1.png" width="672" /></p>
+<p>Another option is to use Fare Bins instead of keeping the FarePP as a numeric variable. I am using Fare Bin in the GBM model. As there are more FareBins than Pclasses, there is of course some overlap between FareBins and Pclasses.</p>
+<pre class="r"><code>#Note Hmisc needs to be loaded before dplyr, as the other way around errors occured due to the kernel using the Hmisc summarize function instead of the dplyr summarize function
+all$FareBins &lt;- cut2(all$FarePP, g=5)
+
+ggplot(all[!is.na(all$Survived),], aes(x=FareBins, fill=Survived))+
+        geom_bar(stat=&#39;count&#39;) + theme_grey() + facet_grid(.~Pclass)+
+        theme(axis.text.x = element_text(angle = 45, hjust = 1))</code></pre>
+<p><img src="__results___files/figure-html/unnamed-chunk-41-1.png" width="672" /></p>
+</div>
+</div>
+<div id="predicting-missing-age-values" class="section level2">
+<h2><span class="header-section-number">4.4</span> Predicting missing Age values</h2>
+<p>The density plot below shows that survival chances of children are relatively high. Survival chances of ages 20-30 are below average, and I see less significant differences in the 30+ region. I think there may be a lot of solo travelers in the 20-30 category, which could explain the below averages survival chances. A possible use case of Age could be to use it to identify children. Therefore, I will focus on good looking Age imputations in the region 0-18 years old.</p>
+<pre class="r"><code>ggplot(all[(!is.na(all$Survived) &amp; !is.na(all$Age)),], aes(x = Age, fill = Survived)) +
+geom_density(alpha=0.5, aes(fill=factor(Survived))) + labs(title=&quot;Survival density and Age&quot;) +
+scale_x_continuous(breaks = scales::pretty_breaks(n = 10)) + theme_grey()</code></pre>
+<p><img src="__results___files/figure-html/unnamed-chunk-42-1.png" width="672" /></p>
+<p>I first want to visualize the relation between the Age. Title and Pclass seem the most important predictors for Age to me. As you can see below, there are significant differences in Age across the Titles (By the way, this graph tells me that “Masters” are all very young. I did not know what a master was, but googling it tells me that a master was used as a title for the eldest son only.). Similarly, there differences in Age when looking at the Title/Passenger Class combinations.</p>
+<pre class="r"><code>ggplot(all[!is.na(all$Age),], aes(x = Title, y = Age, fill=Pclass )) +
+  geom_boxplot() + scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) + theme_grey()</code></pre>
+<p><img src="__results___files/figure-html/unnamed-chunk-43-1.png" width="672" /></p>
+<p>The title Master seems to be a good predictor for male children. However, female children are included in the Miss title, and of the 263 missing age values, 51 are Misses. If I would just take the median Age of the Titles (possibly also by Pclass), I would at least not predict the missing ages of female children well. I tried both Mice imputation and Linear Regression, and focused on how good the imputations for children looked. The Mice imputations looked reasonable, but I preferred Linear Regression.</p>
+<pre class="r"><code>#predicting Age with Linear Regression
+set.seed(12000)
+AgeLM &lt;- lm(Age ~ Pclass + Sex + SibSp + Parch + Embarked + Title + GroupSize, data=all[!is.na(all$Age),])
+summary(AgeLM)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = Age ~ Pclass + Sex + SibSp + Parch + Embarked + 
+##     Title + GroupSize, data = all[!is.na(all$Age), ])
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -28.595  -7.937  -1.155   6.228  44.059 
+## 
+## Coefficients:
+##                      Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)            2.8646     6.1895   0.463 0.643590    
+## Pclass.L              -9.8174     0.6477 -15.159  &lt; 2e-16 ***
+## Pclass.Q               2.8176     0.6659   4.231 2.53e-05 ***
+## Sexmale                5.7173     5.9004   0.969 0.332789    
+## SibSp                 -0.9291     0.5121  -1.814 0.069931 .  
+## Parch                  0.2598     0.5625   0.462 0.644329    
+## EmbarkedQ              6.6340     1.8125   3.660 0.000265 ***
+## EmbarkedS              1.7143     0.9171   1.869 0.061874 .  
+## TitleMiss             17.4486     6.1527   2.836 0.004659 ** 
+## TitleMr               22.3092     1.7722  12.589  &lt; 2e-16 ***
+## TitleMrs              32.0366     6.1628   5.198 2.42e-07 ***
+## TitleRare Title       30.0730     2.8336  10.613  &lt; 2e-16 ***
+## GroupSizegroup        -0.3730     1.0836  -0.344 0.730771    
+## GroupSizelarge group   0.8846     1.7620   0.502 0.615753    
+## GroupSizesolo          3.1269     0.9590   3.261 0.001148 ** 
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 10.88 on 1031 degrees of freedom
+## Multiple R-squared:  0.4379, Adjusted R-squared:  0.4302 
+## F-statistic: 57.36 on 14 and 1031 DF,  p-value: &lt; 2.2e-16</code></pre>
+<pre class="r"><code>all$AgeLM &lt;- predict(AgeLM, all)</code></pre>
+<p>As expected, the most significant predictors according to Linear Regression were Passenger Class and Title. Below you can see that the histogram of the predicted values versus the shape of the known ages. The Mice histogram actually looked nicer, but I was wondering how it could predict high ages well given the sparseness of these ages in the original data?</p>
+<pre class="r"><code>par(mfrow=c(1,2))
+hist(all$Age[!is.na(all$Age)], main=&#39;Original data, non-missing&#39;, xlab=&#39;Age&#39;, col=&#39;green&#39;)
+hist(all$AgeLM[is.na(all$Age)], main= &#39;LM NA predictions&#39;, xlab=&#39;Age&#39;, col=&#39;orange&#39;, xlim=range(0:80))</code></pre>
+<p><img src="__results___files/figure-html/unnamed-chunk-45-1.png" width="672" /></p>
+<p>As mentioned before, I especially looked at young predicted ages. Both mice and Linear Regression predicted all Masters with missing ages to be children indeed (the one in Linear Regression with a negative age did not bother me that much, as it is categorized as a child anyway). Mice predicted some Mr.’s to be 14 years old, which is too young. As Linear Regression also predicted a reasonable number of Misses to be children, I eventually chose Linear Regression.</p>
+<pre class="r"><code>#display which passengers are predicted to be children (age&lt;18) with Linear Regression.
+all[(is.na(all$Age) &amp; all$AgeLM &lt;18), c(&#39;Sex&#39;, &#39;SibSp&#39;, &#39;Parch&#39;, &#39;Title&#39;, &#39;Pclass&#39;, &#39;Survived&#39;, &#39;AgeLM&#39;)]</code></pre>
+<pre><code>##         Sex SibSp Parch  Title Pclass Survived     AgeLM
+## 66     male     1     1 Master      3        1  1.747930
+## 129  female     1     1   Miss      3        1 13.479274
+## 160    male     8     2 Master      3        0 -1.524135
+## 177    male     3     1 Master      3        0  2.861592
+## 181  female     8     2   Miss      3        0 10.207209
+## 230  female     3     1   Miss      3        0 14.592936
+## 241  female     1     0   Miss      3        0 13.592488
+## 410  female     3     1   Miss      3        0 14.592936
+## 486  female     3     1   Miss      3        0 14.592936
+## 710    male     1     1 Master      3        1  1.747930
+## 793  female     8     2   Miss      3        0 10.207209
+## 864  female     8     2   Miss      3        0 10.207209
+## 889  female     1     2   Miss      3        0 15.453354
+## 1080 female     8     2   Miss      3     &lt;NA&gt; 10.207209
+## 1136   male     1     2 Master      3     &lt;NA&gt;  3.722010
+## 1231   male     0     0 Master      3     &lt;NA&gt;  2.790243
+## 1236   male     1     1 Master      3     &lt;NA&gt;  3.462242
+## 1309   male     1     1 Master      3     &lt;NA&gt;  1.747930</code></pre>
+<pre class="r"><code>#imputing Linear Regression predictions for missing Ages
+indexMissingAge &lt;- which(is.na(all$Age))
+indexAgeSurvivedNotNA&lt;- which(!is.na(all$Age) &amp; (!is.na(all$Survived))) #needed in sections 4.6 and 4.7
+all$Age[indexMissingAge] &lt;- all$AgeLM[indexMissingAge]</code></pre>
+<p>So now all missing data have been imputed. Am I going to use Age as a predictor in my model? I am not sure yet, as the substantial number of imputations will also add noise. I wil look at using it to create a Child predictor later on.</p>
+</div>
+<div id="what-to-do-with-cabin" class="section level2">
+<h2><span class="header-section-number">4.5</span> What to do with Cabin?</h2>
+<p>Cabin is very sparsely populated. So I either have to ignore it, or use it somehow without making it too specific. On the internet, you can find that that the first letter corresponds to the Deck. Decks A-E are the topdecks and cabins on those decks are mostly first class.</p>
+<pre class="r"><code>#replacing NAs with imaginary Deck U, and keeping only the first letter of ech Cabin (=Deck)
+all$Cabin[is.na(all$Cabin)] &lt;- &quot;U&quot;
+all$Cabin &lt;- substring(all$Cabin, 1, 1)
+all$Cabin &lt;- as.factor(all$Cabin)
+
+ggplot(all[(!is.na(all$Survived)&amp; all$Cabin!=&#39;U&#39;),], aes(x=Cabin, fill=Survived)) +
+        geom_bar(stat=&#39;count&#39;) + theme_grey() + facet_grid(.~Pclass) + labs(title=&quot;Survivor split by class and Cabin&quot;)</code></pre>
+<p><img src="__results___files/figure-html/unnamed-chunk-48-1.png" width="672" /></p>
+<p>Below, you can see that there are interesting difference among Decks. For instance, the top Deck (A) was not best place to be. Even Deck F had better survival rates.</p>
+<pre class="r"><code>c1 &lt;- round(prop.table(table(all$Survived[(!is.na(all$Survived)&amp;all$Cabin!=&#39;U&#39;)], all$Cabin[(!is.na(all$Survived)&amp;all$Cabin!=&#39;U&#39;)]),2)*100)
+kable(c1)</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th align="right">A</th>
+<th align="right">B</th>
+<th align="right">C</th>
+<th align="right">D</th>
+<th align="right">E</th>
+<th align="right">F</th>
+<th align="right">G</th>
+<th align="right">T</th>
+<th align="right">U</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>0</td>
+<td align="right">53</td>
+<td align="right">26</td>
+<td align="right">41</td>
+<td align="right">24</td>
+<td align="right">25</td>
+<td align="right">38</td>
+<td align="right">50</td>
+<td align="right">100</td>
+<td align="right">NaN</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td align="right">47</td>
+<td align="right">74</td>
+<td align="right">59</td>
+<td align="right">76</td>
+<td align="right">75</td>
+<td align="right">62</td>
+<td align="right">50</td>
+<td align="right">0</td>
+<td align="right">NaN</td>
+</tr>
+</tbody>
+</table>
+<p>Although I feel that Deck and Deck sections (front/back of boat, sections close to stairs et cetera) would be great predictors, I am not using Cabin due to the the sparseness of the data.</p>
+</div>
+<div id="how-to-deal-with-children-in-the-model" class="section level2">
+<h2><span class="header-section-number">4.6</span> How to deal with Children in the model?</h2>
+<p>The survival density plot in the Age section shows that Children below roughly 14.5 (which is also the maximum Age of Masters in the data) have a better survival rate than then other Ages. However, if you look at the imputed Ages below 14.5, you will also see that all these age imputation are for Pclass 3 and most of these children actually died (10 out of 13).</p>
+<p>This makes me wonder if I should add a survival ‘bonus’ for all Pclasses. Below you can see that most children in P3 actually die. As these children in P3 also include age imputations which may add noise, I decided to exclude P3 from the Child predictor.</p>
+<pre class="r"><code>ggplot(all[all$Age&lt;14.5 &amp; !is.na(all$Survived),], aes(x=Pclass, fill=Survived))+
+        geom_bar(stat=&#39;count&#39;) + theme_grey(base_size = 18)</code></pre>
+<p><img src="__results___files/figure-html/unnamed-chunk-50-1.png" width="50%" /></p>
+<pre class="r"><code>all$IsChildP12 &lt;- &#39;No&#39;
+all$IsChildP12[all$Age&lt;=14.5 &amp; all$Pclass %in% c(&#39;1&#39;, &#39;2&#39;)] &lt;- &#39;Yes&#39;
+all$IsChildP12 &lt;- as.factor(all$IsChildP12)</code></pre>
+</div>
+<div id="what-does-embarked-tell-us" class="section level2">
+<h2><span class="header-section-number">4.7</span> What does Embarked tell us?</h2>
+<p>Although I feel that the city of Embarked should not be related to survival rates, I still wanted to check it. As you can see below, there somehow are significant differences between the three ports of embarkment.</p>
+<pre class="r"><code>d1 &lt;- ggplot(all[!is.na(all$Survived),], aes(x = Embarked, fill = Survived)) +
+  geom_bar(stat=&#39;count&#39;) + theme_grey() + labs(x = &#39;Embarked&#39;, y= &#39;Count&#39;)
+d2 &lt;- ggplot(all[!is.na(all$Survived),], aes(x = Embarked, fill = Survived)) +
+  geom_bar(stat=&#39;count&#39;, position= &#39;fill&#39;) + theme_grey() + labs(x = &#39;Embarked&#39;, y= &#39;Percent&#39;)
+
+grid.arrange(d1, d2, nrow=1)</code></pre>
+<p><img src="__results___files/figure-html/unnamed-chunk-52-1.png" width="672" /></p>
+<p>To get a feel for where this differences may come from, I plotted them against Sex and Pclass. Roughly, differences were:</p>
+<ul>
+<li>Southampton survival rates are worse than Cherbourg in all Pclass/Sex combinations</li>
+<li>Cherbourg survival rates are better than Queenstown as many 1st class passengers boarded at Cherbourgh, while almost all Queenstown passengers boarded 3rd class (but within 3rd class, female survival rate is better than Cherbourg and male survival rate is worse than Cherbourgh).</li>
+</ul>
+<p>My conclusion is that at least the lower survival rate of Southampton compared to Cherbourg cannot be explained by Pclass or Sex. One thing that I want to look at is the relation between Embarked, Age and Survived, because Linear Regression surprisingly enough also labeled Embarked at Queenstown as a significant predictor for Age. Below I am only using the known Ages of the training data (714 observation = training set - 177 observations with missing Age).</p>
+<pre class="r"><code>ggplot(all[indexAgeSurvivedNotNA,], aes(x = Age, fill = Survived)) +
+geom_histogram(aes(fill=factor(Survived))) + labs(title=&quot;Survival density, known-ages, and Embarked&quot;) +
+scale_x_continuous(breaks = scales::pretty_breaks(n = 5)) + theme_grey() + facet_grid(.~Embarked)</code></pre>
+<p><img src="__results___files/figure-html/unnamed-chunk-53-1.png" width="672" /></p>
+<p>This shows that is very little data for especially Queenstown when looking at known Ages. Below you can see that the total number of people who embarked at Queenstown is low indeed, but especially the high percentage of missing ages in Queenstown is really high. Using imputed ages will therefore add too much noise, and combining Age and Embarked as a predictor is a bad idea.</p>
+<pre class="r"><code>tab1 &lt;- rbind(table(all$Embarked[!is.na(all$Survived)]),table(all$Embarked[indexAgeSurvivedNotNA]))
+tab1 &lt;- cbind(tab1, (rowSums(tab1)))
+tab1 &lt;- rbind(tab1, tab1[1,]-tab1[2,])
+tab1 &lt;- rbind(tab1, round((tab1[3,]/tab1[1,])*100))
+rownames(tab1) &lt;- c(&quot;All&quot;, &quot;With Age&quot;, &quot;Missing Age&quot;, &quot;Percent Missing&quot;)
+colnames(tab1) &lt;- c(&quot;C&quot;, &quot;Q&quot;, &quot;S&quot;, &quot;Total&quot;)
+kable(tab1)</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th align="right">C</th>
+<th align="right">Q</th>
+<th align="right">S</th>
+<th align="right">Total</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>All</td>
+<td align="right">170</td>
+<td align="right">77</td>
+<td align="right">644</td>
+<td align="right">891</td>
+</tr>
+<tr class="even">
+<td>With Age</td>
+<td align="right">132</td>
+<td align="right">28</td>
+<td align="right">554</td>
+<td align="right">714</td>
+</tr>
+<tr class="odd">
+<td>Missing Age</td>
+<td align="right">38</td>
+<td align="right">49</td>
+<td align="right">90</td>
+<td align="right">177</td>
+</tr>
+<tr class="even">
+<td>Percent Missing</td>
+<td align="right">22</td>
+<td align="right">64</td>
+<td align="right">14</td>
+<td align="right">20</td>
+</tr>
+</tbody>
+</table>
+<p>The only other thing that I can think of that might explain the differences is that probably people from the different embarkement cities are somehow grouped on certain sections of the decks.</p>
+<p>I kept Embarked in my model in early versions. However, it gradually became clear that Embarked does not add anything and I am not using it anymore.</p>
+</div>
+<div id="ticket-survivors" class="section level2">
+<h2><span class="header-section-number">4.8</span> Ticket survivors</h2>
+<p>This variable checks if any people in a group survived. The idea is that if anyone in a certain group survived, chances of others also surviving are higher. I did this using the Ticket information, and it improved the scores.</p>
+<pre class="r"><code>TicketSurvivors &lt;- all %&gt;%
+        group_by(Ticket) %&gt;%
+        summarize(Tsize = length(Survived),
+                  NumNA = sum(is.na(Survived)),
+                  SumSurvived = sum(as.numeric(Survived)-1, na.rm=T))</code></pre>
+<pre class="r"><code>all &lt;- left_join(all, TicketSurvivors)</code></pre>
+<pre><code>## Joining, by = c(&quot;Ticket&quot;, &quot;Tsize&quot;)</code></pre>
+<pre class="r"><code>all$AnySurvivors[all$Tsize==1] &lt;- &#39;other&#39;
+all$AnySurvivors[all$Tsize&gt;=2] &lt;- ifelse(all$SumSurvived[all$Tsize&gt;=2]&gt;=1, &#39;survivors in group&#39;, &#39;other&#39;)
+all$AnySurvivors &lt;- as.factor(all$AnySurvivors)
+
+kable(x=table(all$AnySurvivors), col.names= c(&#39;AnySurvivors&#39;, &#39;Frequency&#39;))</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">AnySurvivors</th>
+<th align="right">Frequency</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">other</td>
+<td align="right">950</td>
+</tr>
+<tr class="even">
+<td align="left">survivors in group</td>
+<td align="right">359</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="adding-an-is-solo-variable-based-on-siblings-and-spouse-sibsp-only" class="section level2">
+<h2><span class="header-section-number">4.9</span> Adding an “Is Solo” variable&quot; based on Siblings and Spouse (SibSp) only</h2>
+<p>In an earlier version, I experimented with an “IsSolo” predictor that was based on the Group size. However, this double counted the Group categories too much and did not work. Eventually, I added an IsSolo predictor that is only based on the SibSp information. Using this predictor in the SVM model leads to slightly better results.</p>
+<pre class="r"><code>all$IsSolo[all$SibSp==0] &lt;- &#39;Yes&#39;
+all$IsSolo[all$SibSp!=0] &lt;- &#39;No&#39;
+all$IsSolo &lt;- as.factor(all$IsSolo)
+
+ggplot(all[!is.na(all$Survived),], aes(x = IsSolo, fill = Survived)) +
+  geom_bar(stat=&#39;count&#39;) + theme_grey(base_size = 18)</code></pre>
+<p><img src="__results___files/figure-html/unnamed-chunk-57-1.png" width="50%" /></p>
+</div>
+</div>
+<div id="predictions-with-caret-cross-validation" class="section level1">
+<h1><span class="header-section-number">5</span> Predictions (with caret cross validation)</h1>
+<p>Altogether, I created predictions with 3 different algorithms. In addition, I tried to combine (ensemble) the models in 3 different ways. This ensemble further improved the scores.</p>
+<pre class="r"><code>#splitting data into train and test set again
+trainClean &lt;- all[!is.na(all$Survived),]
+testClean &lt;- all[is.na(all$Survived),]</code></pre>
+<div id="random-forest-model" class="section level2">
+<h2><span class="header-section-number">5.1</span> Random Forest model</h2>
+<p>I started this analysis with just a Random Forest model, as it is known for high accuracy and limiting overfitting.</p>
+<p>Although the formula function must be used with many algorithms, it is better to not use it with Random Forest as this causes issues with weights of predictors. I am just using 5 predictors.</p>
+<pre class="r"><code>set.seed(2017)
+caret_matrix &lt;- train(x=trainClean[,c(&#39;PclassSex&#39;, &#39;GroupSize&#39;, &#39;FarePP&#39;, &#39;AnySurvivors&#39;, &#39;IsChildP12&#39;)], y=trainClean$Survived, data=trainClean, method=&#39;rf&#39;, trControl=trainControl(method=&quot;cv&quot;, number=5))
+caret_matrix</code></pre>
+<pre><code>## Random Forest 
+## 
+## 891 samples
+##   5 predictor
+##   2 classes: &#39;0&#39;, &#39;1&#39; 
+## 
+## No pre-processing
+## Resampling: Cross-Validated (5 fold) 
+## Summary of sample sizes: 713, 713, 713, 713, 712 
+## Resampling results across tuning parameters:
+## 
+##   mtry  Accuracy   Kappa    
+##   2     0.8529785  0.6779428
+##   3     0.8563555  0.6887632
+##   5     0.8428661  0.6641191
+## 
+## Accuracy was used to select the optimal model using the largest value.
+## The final value used for the model was mtry = 3.</code></pre>
+<pre class="r"><code>caret_matrix$results</code></pre>
+<pre><code>##   mtry  Accuracy     Kappa AccuracySD    KappaSD
+## 1    2 0.8529785 0.6779428 0.01210699 0.03136054
+## 2    3 0.8563555 0.6887632 0.02184316 0.04954607
+## 3    5 0.8428661 0.6641191 0.02355532 0.05530106</code></pre>
+<pre class="r"><code>#extracting variable importance and make graph with ggplot (looks nicer that the standard varImpPlot)
+rf_imp &lt;- varImp(caret_matrix, scale = FALSE)
+rf_imp &lt;- rf_imp$importance
+rf_gini &lt;- data.frame(Variables = row.names(rf_imp), MeanDecreaseGini = rf_imp$Overall)
+
+ggplot(rf_gini, aes(x=reorder(Variables, MeanDecreaseGini), y=MeanDecreaseGini, fill=MeanDecreaseGini)) +
+        geom_bar(stat=&#39;identity&#39;) + coord_flip() + theme(legend.position=&quot;none&quot;) + labs(x=&quot;&quot;) +
+        ggtitle(&#39;Variable Importance Random Forest&#39;) + theme(plot.title = element_text(hjust = 0.5))</code></pre>
+<p><img src="__results___files/figure-html/unnamed-chunk-61-1.png" width="672" /></p>
+<pre class="r"><code>#using the model to make Survival predictions on the test set
+solution_rf &lt;- predict(caret_matrix, testClean)</code></pre>
+</div>
+<div id="support-vector-machine-svm-model" class="section level2">
+<h2><span class="header-section-number">5.2</span> Support Vector Machine (SVM) model</h2>
+<p>The second algorithm that I want to use is SVM, as it is known to work well with small datasets. As I am only having a few predictors and relatively many observation, I am choosing svmRadial (Gaussian) over svmLinear.</p>
+<pre class="r"><code>set.seed(2017)
+caret_svm &lt;- train(Survived~ PclassSex + FarePP + AnySurvivors + IsChildP12 + IsSolo, data=trainClean, method=&#39;svmRadial&#39;, preProcess= c(&#39;center&#39;, &#39;scale&#39;), trControl=trainControl(method=&quot;cv&quot;, number=5))
+caret_svm</code></pre>
+<pre><code>## Support Vector Machines with Radial Basis Function Kernel 
+## 
+## 891 samples
+##   5 predictor
+##   2 classes: &#39;0&#39;, &#39;1&#39; 
+## 
+## Pre-processing: centered (9), scaled (9) 
+## Resampling: Cross-Validated (5 fold) 
+## Summary of sample sizes: 713, 713, 713, 713, 712 
+## Resampling results across tuning parameters:
+## 
+##   C     Accuracy   Kappa    
+##   0.25  0.8249200  0.6180341
+##   0.50  0.8249200  0.6185075
+##   1.00  0.8237964  0.6180250
+## 
+## Tuning parameter &#39;sigma&#39; was held constant at a value of 0.1250907
+## Accuracy was used to select the optimal model using the largest value.
+## The final values used for the model were sigma = 0.1250907 and C = 0.25.</code></pre>
+<pre class="r"><code>caret_svm$results</code></pre>
+<pre><code>##       sigma    C  Accuracy     Kappa AccuracySD    KappaSD
+## 1 0.1250907 0.25 0.8249200 0.6180341 0.01071088 0.02947585
+## 2 0.1250907 0.50 0.8249200 0.6185075 0.01447094 0.03651372
+## 3 0.1250907 1.00 0.8237964 0.6180250 0.01088317 0.02294949</code></pre>
+<pre class="r"><code>#using the model to make Survival predictions on the test set
+solution_svm &lt;- predict(caret_svm, testClean)</code></pre>
+</div>
+<div id="gradient-boosting-machine-gbm-model" class="section level2">
+<h2><span class="header-section-number">5.3</span> Gradient Boosting Machine (GBM) model</h2>
+<p>As I am already having a model that uses Bagging, I want the 3rd model to be a boosting model. Of the possible boosting algorithms, I am choosing GBM.</p>
+<pre class="r"><code>set.seed(2017)
+caret_boost &lt;- train(Survived~ PclassSex + GroupSize + FareBins + AnySurvivors + IsChildP12, data=trainClean, method=&#39;gbm&#39;, preProcess= c(&#39;center&#39;, &#39;scale&#39;), trControl=trainControl(method=&quot;cv&quot;, number=7), verbose=FALSE)
+print(caret_boost)</code></pre>
+<pre><code>## Stochastic Gradient Boosting 
+## 
+## 891 samples
+##   5 predictor
+##   2 classes: &#39;0&#39;, &#39;1&#39; 
+## 
+## Pre-processing: centered (14), scaled (14) 
+## Resampling: Cross-Validated (7 fold) 
+## Summary of sample sizes: 764, 764, 764, 763, 764, 764, ... 
+## Resampling results across tuning parameters:
+## 
+##   interaction.depth  n.trees  Accuracy   Kappa    
+##   1                   50      0.8147409  0.5964495
+##   1                  100      0.8192667  0.6040703
+##   1                  150      0.8440224  0.6645849
+##   2                   50      0.8293729  0.6338019
+##   2                  100      0.8473882  0.6740924
+##   2                  150      0.8507540  0.6801545
+##   3                   50      0.8440049  0.6700786
+##   3                  100      0.8541198  0.6884749
+##   3                  150      0.8597529  0.7003691
+## 
+## Tuning parameter &#39;shrinkage&#39; was held constant at a value of 0.1
+## 
+## Tuning parameter &#39;n.minobsinnode&#39; was held constant at a value of 10
+## Accuracy was used to select the optimal model using the largest value.
+## The final values used for the model were n.trees = 150,
+##  interaction.depth = 3, shrinkage = 0.1 and n.minobsinnode = 10.</code></pre>
+<pre class="r"><code>#using the model to make Survival predictions on the test set
+solution_boost &lt;- predict(caret_boost, testClean)</code></pre>
+</div>
+<div id="combining-models" class="section level2">
+<h2><span class="header-section-number">5.4</span> Combining models</h2>
+<div id="majority-vote-ensemble-of-the-three-models" class="section level3">
+<h3><span class="header-section-number">5.4.1</span> Majority vote ensemble of the three models</h3>
+<p>A simple majority vote a multiple good models can help to increase accuracy. This idea is really well explained in <a href="https://mlwave.com/kaggle-ensembling-guide/">Kaggle Ensembling Guide</a>. It works best with multiple good models that are as uncorrelated as possible.</p>
+<pre class="r"><code>#adding model predictions to test dataframe
+testClean$RF &lt;- as.numeric(solution_rf)-1
+testClean$SVM &lt;- as.numeric(solution_svm)-1
+testClean$Boost &lt;- as.numeric(solution_boost)-1
+
+#compose correlations plot
+corrplot.mixed(cor(testClean[, c(&#39;RF&#39;, &#39;SVM&#39;, &#39;Boost&#39;)]), order=&quot;hclust&quot;, tl.col=&quot;black&quot;)</code></pre>
+<p><img src="__results___files/figure-html/unnamed-chunk-67-1.png" width="672" /></p>
+<p>Given the fact that all three models have decent public scores, especially the correlation between SVM and the GBM model is surprisingly low. The most likely explanation is that SVM really is a different algorithm (both other models are tree-based).</p>
+<p>The idea is very simple:</p>
+<ul>
+<li>If 0 or 1 model predicts ‘Survived’, the overall prediction will be ‘Died’</li>
+<li>If 2 or 3 models predict ‘Survived’, the overall prediction will be ‘Survived’</li>
+</ul>
+<pre class="r"><code>testClean$Sum &lt;- testClean$RF + testClean$SVM + testClean$Boost
+testClean$Majority &lt;- ifelse(testClean$Sum&lt;=1, 0, 1)</code></pre>
+</div>
+<div id="taking-predictions-from-one-model-unless-the-others-both-disagree" class="section level3">
+<h3><span class="header-section-number">5.4.2</span> Taking predictions from one model, unless the others both disagree</h3>
+<p>Although I have done my best to avoid over fitting as much as possible (by for instance not using the Titles), the high cross validation scores of both RF and GBM are an indication that these 2 models still overfit somewhat.</p>
+<p>The best kernels on Kaggle show that a public score of around 0.82 - 0.83 is likely to be the maximum achievable test accuracy. The cross validation score of the SVM model is exactely in this range. Probably even more importantly, a low AccuracySD seems more important than the Accuracy itself regarding Public Scores. As the SVM also has a really low AccuracySD, I am going to use SVM as my best model. In this second framework, I am taking the SVM predictions unless both RF and GBM disagree with the SVM prediction.</p>
+<pre class="r"><code>testClean$DisagreeSVM &lt;- ifelse(testClean$RF==testClean$Boost &amp; testClean$SVM != testClean$RF, testClean$RF, testClean$SVM)</code></pre>
+</div>
+<div id="selectively-combining-models-for-pclasssex-combinations" class="section level3">
+<h3><span class="header-section-number">5.4.3</span> Selectively combining models for PclassSex combinations</h3>
+<p>Another idea is to select the model that seems best for each PclassSex combination. When looking at predictions on the training set, issues seem similar in all models. All produce tend to produce False Negatives for men (men predicted to die, but survived), and False Positives for women (predicted to survive, but died).</p>
+<pre class="r"><code>#predictions of the models on the training set
+trainClean$RF &lt;- predict(caret_matrix, trainClean)
+trainClean$SVM &lt;- predict(caret_svm, trainClean)
+trainClean$Boost &lt;- predict(caret_boost, trainClean)
+
+
+#plot differences between actual survived and predictions
+f1 &lt;- ggplot(trainClean[trainClean$Survived != trainClean$RF,], aes(x=PclassSex, fill=RF)) +
+        geom_bar(stat=&#39;count&#39;) + labs(title=&quot;FP and FN, RF model&quot;) + theme_grey() +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+        theme(legend.position=&quot;none&quot;) + xlab(&quot;&quot;)
+
+f2 &lt;- ggplot(trainClean[trainClean$Survived != trainClean$SVM,], aes(x=PclassSex, fill=SVM)) +
+        geom_bar(stat=&#39;count&#39;)+ labs(title=&quot;FP and FN, SVM&quot;) + theme_grey() +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+        theme(legend.position=&quot;none&quot;) + xlab(&quot;&quot;)
+
+f3 &lt;- ggplot(trainClean[trainClean$Survived != trainClean$Boost,], aes(x=PclassSex, fill=Boost)) +
+        geom_bar(stat=&#39;count&#39;)+ labs(title=&quot;FP and FN, GBM&quot;) + theme_grey() +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+        theme(legend.position=&quot;none&quot;) + xlab(&quot;&quot;)
+
+grid.arrange(f1, f2, f3, nrow = 1)</code></pre>
+<p><img src="__results___files/figure-html/unnamed-chunk-70-1.png" width="672" /></p>
+<p>A noticable difference however is that the SVM model also produced a significant amount of False Positives in P3Male (the blue part). As the survival rate of men in P3 was really low, this large amount of False Positives seems a bad sign.</p>
+<p>What I now could do is take SVM as the base model, but take GBM for the P3 predictions.</p>
+<pre class="r"><code>#selecting SVM prediction, and GMB predictions for P3
+testClean$Select &lt;- ifelse(testClean$Pclass != 3, testClean$SVM, testClean$Boost)</code></pre>
+<p>The best framework turned out to be the combination of SVM for P1 and P2, and GBM for P3. The majority voting and ‘take SVM unless both RF and GBM disagree’ did not improve my score. However, chances are that these methods will also improve the scores if I add a few more good models. This should decrease of 2 (alternative) models both getting a prediction wrong.</p>
+<pre class="r"><code>#writing final submission file
+submission_select &lt;- data.frame(PassengerId = test$PassengerId, Survived = testClean$Select)
+write.csv(submission_select, file = &#39;Titanic_select.csv&#39;, row.names = F)</code></pre>
+</div>
+</div>
+<div id="where-is-room-for-improvement" class="section level2">
+<h2><span class="header-section-number">5.5</span> Where is room for improvement?</h2>
+<div id="how-to-fix-male-in-1st-class-issues" class="section level3">
+<h3><span class="header-section-number">5.5.1</span> How to fix Male in 1st class issues?</h3>
+<p>This class is hard to predict, as 37% of men in P1 survived while men overall have a much lower survival rate. As shown in the previous section, predictions include many False Negatives. Many False Negatives means that the predicted number of survivors on the test set is likely to be too low. As you can see below, all models predict the survival rate of this group to be significantly lower than 37% indeed (.37*57=21 survivors).</p>
+<pre class="r"><code>cat(&#39;Total number of Male passengers in P1 in the test set is&#39;, length(testClean$Survived[testClean$PclassSex==&#39;P1Male&#39;]))</code></pre>
+<pre><code>## Total number of Male passengers in P1 in the test set is 57</code></pre>
+<pre class="r"><code>p1m_surv &lt;- as.data.frame(sapply(testClean[testClean$PclassSex==&#39;P1Male&#39;, c(&#39;RF&#39;, &#39;SVM&#39;, &#39;Boost&#39;)], function(x) {sum(x)}))
+kable(x=p1m_surv, col.names = c(&#39;Predicted number of survivors&#39;))</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th align="right">Predicted number of survivors</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>RF</td>
+<td align="right">7</td>
+</tr>
+<tr class="even">
+<td>SVM</td>
+<td align="right">2</td>
+</tr>
+<tr class="odd">
+<td>Boost</td>
+<td align="right">9</td>
+</tr>
+</tbody>
+</table>
+<p>Although SVM only predicts 2 survivors, these 2 are in fact the 2 children in this class. This might actually be the best bet, if survival is hard to predict (predicting dead is better when unclear as the majority died).</p>
+<p>I do not know if the survival rate of P1Male in the test set is also 37%, but it seems likely that the predicted survival rate for this group is too low in all models. Therefore, I have looked for angles to ‘reliably’ increase this number. As you can see below, there is a significant difference in survival density of men below and above appromimately 40. So the survival ‘bonus’ that children have in general, is for P1Male ‘extended’ to 40.</p>
+<p>I have actually tried to include this exception in the models, but It did not improve the scores. I assume this is because the survival rate in P1Male under 40 now really gets close to 50/50, which makes it very hard to predict with some degree of certainty.</p>
+<pre class="r"><code>p1m1 &lt;- ggplot(all[indexAgeSurvivedNotNA,] %&gt;% filter(PclassSex==&#39;P1Male&#39;), aes(x = Age, fill = Survived)) + geom_density(alpha=0.5, aes(fill=factor(Survived))) + labs(title=&quot;Survival density and Age P1 Male&quot;) + theme_grey()
+
+all$P1AgeMale[indexAgeSurvivedNotNA=T &amp; all$PclassSex==&#39;P1Male&#39; &amp; all$Age&lt;40] &lt;- &#39;Under40&#39;
+all$P1AgeMale[indexAgeSurvivedNotNA=T &amp; all$PclassSex==&#39;P1Male&#39; &amp; all$Age&gt;=40] &lt;- &#39;Over40&#39;
+
+p1m2 &lt;- ggplot(all[!is.na(all$Survived) &amp; !is.na(all$P1AgeMale),], aes(x=P1AgeMale, fill=Survived))+
+        geom_bar(stat = &#39;count&#39;, position = &#39;fill&#39;) + theme(legend.position=&quot;none&quot;)
+
+
+grid.arrange(p1m1, p1m2, widths=c(2,1))</code></pre>
+<p><img src="__results___files/figure-html/unnamed-chunk-74-1.png" width="672" /></p>
+</div>
+<div id="how-to-fix-female-in-3rd-class-issues" class="section level3">
+<h3><span class="header-section-number">5.5.2</span> How to fix Female in 3rd class issues?</h3>
+<p>Females in 3rd class have an overall 50/50 survival chance, which is hard to predict. In the previous section, P3Female showed many False Positives. This was expected, as women generally survived. Similar to the males in P1, I found something that is specific to this group.</p>
+<p>As you can see below, solo women (based on SibSp) had better chances of survival in all Pclasses. This is especially relevant to the women in P3, as differences in P2Female and P1Female are small while they mostly survived anyway. In previous versions, I tried a different IsSolo predictor (based on Fsize), and did not manage to model this exception succesfully. However, it may be worth trying a Male/Female split with the IsSolo predictor based on SibSp only.</p>
+<pre class="r"><code>ggplot(all[!is.na(all$Survived),], aes(x=IsSolo, fill=Survived))+
+        geom_bar(stat=&#39;count&#39;, position=&#39;fill&#39;) + facet_grid(.~Pclass+Sex)</code></pre>
+<p><img src="__results___files/figure-html/unnamed-chunk-75-1.png" width="672" /></p>
+</div>
+</div>
+</div>
+
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

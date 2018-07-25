@@ -1,0 +1,22 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r}
+# Construct a 5x6 matrix
+X <- matrix(rnorm(30), nrow=5, ncol=6)
+str(X)
+
+# Sum the values of each column with `apply()`
+apply(X, 2, sum)
+
+![apply介紹](/Users/willsonyen/Desktop/content_content_apply_1.png)
+<img src="/Users/willsonyen/Desktop/content_content_apply_1.png" width="100%" />
+
+  
+```
+```{r}
+
+```
+

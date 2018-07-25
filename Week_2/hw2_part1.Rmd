@@ -20,6 +20,8 @@ geom_boxplot()
 ```{r}
 ggplot(data = iris,aes(x = Sepal.Length , y = Sepal.Width ,color = Species))+geom_point()
 ?ggplot
+5 %% 2
+
 ```
 
 ```{r}
@@ -35,9 +37,6 @@ Orange
 ggplot(data=Orange,aes(x=circumference,y=age,group=Tree,color=Tree))+geom_line()+geom_point()
 ```
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
 
 
 
