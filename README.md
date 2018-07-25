@@ -25,3 +25,9 @@
   
 * At home
   1. [hw2_part2](https://willsonyen.github.io/CSX_RProject_Summer_2018/Week_2/hw_part2.html)
+
+
+## Week 3
+* In class
+  1. [hw3_paar1](https://willsonyen.github.io/CSX_RProject_Summer_2018/Week_3/RMD_EDA2.html)
+  
