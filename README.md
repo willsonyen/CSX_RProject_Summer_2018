@@ -21,16 +21,22 @@
 
 ## Week 2
 * In class
-  1. [hw2_part1](https://willsonyen.github.io/CSX_RProject_Summer_2018/Week_2/hw2_part1.html)
+  1. 學習各種資料型態，利用ggplot2套件作圖。
+   \ [hw2_part1](https://willsonyen.github.io/CSX_RProject_Summer_2018/Week_2/hw2_part1.html)
   
 * At home
   1. text-mining，以ptt男女版為例。
-  [hw2_part2](https://willsonyen.github.io/CSX_RProject_Summer_2018/Week_2/hw_part2.html)
+   \ [hw2_part2](https://willsonyen.github.io/CSX_RProject_Summer_2018/Week_2/hw_part2.html)
   2. 練習使用ggmap和地圖套件，繪製交換學生地圖。
-  [hw2_part2_2](https://willsonyen.github.io/CSX_RProject_Summer_2018/Week_2/hw_part2.html)
+   \ [hw2_part2_2](https://willsonyen.github.io/CSX_RProject_Summer_2018/Week_2/hw2_part2_2.html)
 
 ## Week 3
 * In class
-  1. [hw3_paar1](https://willsonyen.github.io/CSX_RProject_Summer_2018/Week_3/RMD_EDA2.html)
+  1. 模仿kaggle網站上的內容，練習分析數據，整理出有意義的結果。
+   \ [hw3_paar1](https://willsonyen.github.io/CSX_RProject_Summer_2018/Week_3/RMD_EDA2.html)
 * At home
-  1. [hw3_part2](https://willsonyen.github.io/CSX_RProject_Summer_2018/Week_3/hw3_2.html)
+  1. 針對ptt studyabroad進行text-mining，並整理出101~104年的數據，比對各年度的差異。
+   \ [hw3_part2_101](https://willsonyen.github.io/CSX_RProject_Summer_2018/Week_3/hw3_2_101.html)
+   \ [hw3_part2_102](https://willsonyen.github.io/CSX_RProject_Summer_2018/Week_3/hw3_2_102.html)
+   \ [hw3_part2_103](https://willsonyen.github.io/CSX_RProject_Summer_2018/Week_3/hw3_2_103.html)
+   \ [hw3_part2_104](https://willsonyen.github.io/CSX_RProject_Summer_2018/Week_3/hw3_2_104.html)
