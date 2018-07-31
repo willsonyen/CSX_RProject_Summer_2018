@@ -36,5 +36,7 @@
    \ [hw3_paar1](https://willsonyen.github.io/CSX_RProject_Summer_2018/Week_3/RMD_EDA2.html)
 * At home
   1. 針對ptt studyabroad進行text-mining，並整理出101~104年的數據，比對各年度的差異。
-   \ [hw3_part2_101](https://willsonyen.github.io/CSX_RProject_Summer_2018/Week_3/hw3_2.html)
-   \ [hw3_part2_101](https://willsonyen.github.io/CSX_RProject_Summer_2018/Week_3/hw3_2.html)
+   \ [hw3_part2_101](https://willsonyen.github.io/CSX_RProject_Summer_2018/Week_3/hw3_2_101.html)
+   \ [hw3_part2_102](https://willsonyen.github.io/CSX_RProject_Summer_2018/Week_3/hw3_2_102.html)
+   \ [hw3_part2_103](https://willsonyen.github.io/CSX_RProject_Summer_2018/Week_3/hw3_2_103.html)
+   \ [hw3_part2_104](https://willsonyen.github.io/CSX_RProject_Summer_2018/Week_3/hw3_2_104.html)
