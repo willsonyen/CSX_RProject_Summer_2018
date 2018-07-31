@@ -1,0 +1,141 @@
+---
+title: "taiwan_uni"
+output: html_document
+---
+
+```{r}
+# install.packages("ggmap")
+library(ggmap)
+library(mapproj)
+map <- get_map(location = 'Taiwan', zoom = 7)
+ggmap(map)
+```
+
+```{r}
+map <- get_map(location = 'Taiwan', zoom = 7,
+  language = "zh-TW")
+ggmap(map)
+```
+
+```{r}
+map <- get_map(location = c(lon = 121.5375338, lat = 25.0179005),
+  zoom = 15, language = "zh-TW",maptype = "toner-lite")
+ggmap(map)
+```
+
+```{r}
+
+library(COUNT)
+library(xml2)
+library(tmcn)
+library(rvest)
+library(NLP)
+library(tm)
+library(jiebaRD)
+library(jiebaR)
+library(RColorBrewer)
+library(knitr)
+library(wordcloud)
+library(wordcloud2)
+library(jiebaR)
+
+
+geocode(c("台灣大學","national chengchi university","BILKENT UNIVERSITY","Ko_University"))
+
+```
+
+
+```{r error=TRUE}
+# exchange <- readxl::read_excel("Student_exchange.xls",sheet=1)
+head(data)
+tail(data)
+
+data_excSchool <- data[3:11662,12]
+View(data_excSchool)
+
+write.csv(data_excSchool,file="data_excSchool.csv",row.names = FALSE)
+```
+
+
+
+```{r error=TRUE}
+# install.packages("rio")
+library(rio)
+export(data_excSchool,"excSchool.xlsx")
+
+```
+
+
+## 台灣各大學出國交換示意：北部最多，其次高雄、台中、台南、新竹
+```{r error=TRUE}
+library(readr)
+
+test_df <- readxl::read_excel("school_names.xls",sheet=1)
+View(test_df)
+
+# geocoded <- data.frame(stringsAsFactors = FALSE)
+
+for(i in 1:nrow(test_df))
+{
+  result <- geocode(test_df$school_name[i], output = "latlon", source = "google")
+  test_df$lon[i] <- as.numeric(result[1])
+  test_df$lat[i] <- as.numeric(result[2])
+}
+
+map_4 <- get_map(location = c(lon = 120.5, lat = 23.625), zoom = 8)
+ggmap(map_4,darken = c(0.5, "white")) + geom_point(aes(x = lon, y = lat, size = count), data = test_df)
+
+
+```
+
+
+## 台灣留學生去到世界各國的分佈-舉幾個國家為例
+```{r}
+test_df2 <- readxl::read_excel("excSchool.xlsx",sheet=1)
+
+for(i in 1:nrow(test_df2))
+{
+  result <- geocode(test_df2$exc_school[i], output = "latlon", source = "google")
+  test_df2$lon[i] <- as.numeric(result[1])
+  test_df2$lat[i] <- as.numeric(result[2])
+}
+
+
+# World
+map_5 <- get_map(location = c(lon=60,lat=0), zoom = 1)
+ggmap(map_5,darken = c(0.5, "white")) + geom_point(aes(x = lon, y = lat, size = count), data = test_df2)
+
+# China
+map_5 <- get_map(location = "China", zoom = 4)
+ggmap(map_5,darken = c(0.5, "white")) + geom_point(aes(x = lon, y = lat, size = count), data = test_df2)
+```
+```{r}
+# China
+map_5 <- get_map(location = "China", zoom = 4)
+ggmap(map_5,darken = c(0.5, "white")) + geom_point(aes(x = lon, y = lat, size = count), data = test_df2)
+```
+
+
+```{r}
+# Japan
+map_5 <- get_map(location = "Japan", zoom = 5)
+ggmap(map_5,darken = c(0.5, "white")) + geom_point(aes(x = lon, y = lat, size = count), data = test_df2)
+```
+```{r}
+# Korea
+map_5 <- get_map(location = "Korea", zoom = 7)
+ggmap(map_5,darken = c(0.5, "white")) + geom_point(aes(x = lon, y = lat, size = count), data = test_df2)
+```
+```{r}
+# USA
+map_5 <- get_map(location = "America", zoom = 4)
+ggmap(map_5,darken = c(0.5, "white")) + geom_point(aes(x = lon, y = lat, size = count), data = test_df2)
+```
+
+```{r}
+# Europe
+map_5 <- get_map(location = "Europe", zoom = 4)
+ggmap(map_5,darken = c(0.5, "white")) + geom_point(aes(x = lon, y = lat, size = count), data = test_df2)
+```
+
+## 問題：有缺失值，必須想辦法解決，資料才會更完整。
