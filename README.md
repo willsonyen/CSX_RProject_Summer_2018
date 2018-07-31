@@ -21,7 +21,8 @@
 
 ## Week 2
 * In class
-  1. [hw2_part1](https://willsonyen.github.io/CSX_RProject_Summer_2018/Week_2/hw2_part1.html)
+  1. 學習各種資料型態，利用ggplot2套件作圖。
+   \ [hw2_part1](https://willsonyen.github.io/CSX_RProject_Summer_2018/Week_2/hw2_part1.html)
   
 * At home
   1. text-mining，以ptt男女版為例。
