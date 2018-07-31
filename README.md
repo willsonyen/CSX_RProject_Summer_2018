@@ -24,8 +24,10 @@
   1. [hw2_part1](https://willsonyen.github.io/CSX_RProject_Summer_2018/Week_2/hw2_part1.html)
   
 * At home
-  1. [hw2_part2](https://willsonyen.github.io/CSX_RProject_Summer_2018/Week_2/hw_part2.html)
-
+  1. text-mining，以ptt男女版為例。
+  [hw2_part2](https://willsonyen.github.io/CSX_RProject_Summer_2018/Week_2/hw_part2.html)
+  2. 練習使用ggmap和地圖套件，繪製交換學生地圖。
+  [hw2_part2_2](https://willsonyen.github.io/CSX_RProject_Summer_2018/Week_2/hw_part2.html)
 
 ## Week 3
 * In class
