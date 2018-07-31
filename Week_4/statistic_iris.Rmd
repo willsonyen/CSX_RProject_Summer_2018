@@ -1,0 +1,123 @@
+---
+title: "hw4_willsonyen"
+output:
+  html_document:
+    df_print: paged
+---
+
+# 統計分析：以iris為data
+
+```{r error = TRUE}
+# 先載入套件
+install.packages("Hmisc")
+library(ggplot2)
+library(readr)
+library(knitr)
+library(Hmisc)
+```
+
+```{r}
+# 檢視資料
+str(iris)
+```
+## 總共有150筆資料，5個變項。
+#### 1.花萼長度(Sepal.Length)：連續
+#### 花萼寬度(Sepal.Width)：連續
+#### 花瓣長度(Petal.Length) ：連續
+#### 花瓣寬度(Petal.Width)：連續
+#### 品種(Species)：類別
+
+
+
+## 敘述統計，並繪圖
+```{r}
+# 算出各長度的平均值
+mean(iris$Sepal.Length) # 5.843333
+mean(iris$Sepal.Width) # 3.057333
+mean(iris$Petal.Length) # 3.758
+mean(iris$Petal.Width) # 1.199333
+
+# 用summary這個函數就可以看到整體
+summary(iris)
+
+```
+
+```{r}
+# 散佈圖:看關係
+require(ggplot2)
+  ggplot(data=iris) +                        
+    geom_point(aes(x=Petal.Length,           
+                   y=Petal.Width,
+                   color=Species))
+```
+
+```{r}
+# 盒子圖
+ggplot(data = iris, aes(x = Species,y=Sepal.Length)) +
+geom_boxplot()
+```
+
+```{r}
+ggplot(data = iris, aes(x = Species,y=Sepal.Width)) +
+geom_boxplot()
+```
+```{r}
+ggplot(data = iris, aes(x = Species,y=Petal.Length)) +
+geom_boxplot()
+```
+
+```{r}
+ggplot(data = iris, aes(x = Species,y=Petal.Width)) +
+geom_boxplot()
+```
+### 由盒子圖可見：花萼長度、花瓣長度、花瓣寬度都是以virginica最常，但在花萼寬度上以setosa最長。
+
+# 進行統計分析
+##### 進行統計分析前，先檢查是否有缺失值，有的話把他去除。
+```{r}
+table(is.na(iris)) 
+# 沒有缺失值
+```
+```{r}
+# 進行回歸分析
+model <- lm(formula= Sepal.Length ~ Sepal.Width + Petal.Length + Petal.Width,
+            data=iris)
+summary(model)
+```
+## 回歸結果：
+#### 回歸方程式 Sepal.Length = 1.85600 + 0.65084xSepal.Width + 0.70913xPetal.Length - 0.55648xPetal.Width
+#### R-squared: 0.8586 ； Adj R-squared: 0.8557
+#### 根據p值，三個自變數對Y（Sepal.Length）都表示顯著
+
+
+## 以anova分析三個不同品種的花瓣長度和寬度是否真的存在差異，還是只是隨機結果
+```{r}
+# 進行anova分析
+# 先設定假設檢定：H0為 μ(Setosa) = μ(Versicolor) = μ(Virginica)；H1為「至少有一平均數不相等」
+a.lm <- lm(Petal.Width~Species, data=iris)
+anova(a.lm)
+
+
+```
+### 花瓣寬度的結果為顯著的，代表三者至少有一平均數不相等。
+### 再來看花瓣長度
+
+```{r}
+b.lm <- lm(Petal.Length~Species, data=iris)
+anova(b.lm)
+```
+### 花瓣長度的結果也是顯著，代表三者至少有一平均數不相等。
+### 可以推論不同品種間的花瓣長寬度確實存在差異，不是隨機的。那花萼長寬呢？
+
+```{r}
+c.lm <- lm(Sepal.Width~Species, data=iris)
+anova(c.lm)
+
+```
+```{r}
+d.lm <- lm(Sepal.Length~Species, data=iris)
+anova(d.lm)
+
+```
+### 花萼長寬度也是顯著的，不同品種間確實存在差異。
+
