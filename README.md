@@ -32,7 +32,7 @@
 
 ## Week 3
 * In class
-  1. 模仿kaggle網站上的內容，練習分析數據，整理出有意義的問題。
+  1. 模仿kaggle網站上的內容，練習分析數據，整理出有意義的結果。
    \ [hw3_paar1](https://willsonyen.github.io/CSX_RProject_Summer_2018/Week_3/RMD_EDA2.html)
 * At home
   1. 針對ptt studyabroad進行text-mining，並整理出101~104年的數據，比對各年度的差異。
