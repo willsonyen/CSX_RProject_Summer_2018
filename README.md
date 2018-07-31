@@ -46,5 +46,5 @@
 * In class
   1. 用R進行EDA的深度分析分析（T-test、ANOVA）。
 * At home
-  1. 以iris的data為基礎，練習各種統計方法，並得出有意義的結果。
+  1. 以iris的data為基礎，練習ANOVA分析、回歸分析，並得出有意義的結果。
    \ [hw4](https://willsonyen.github.io/CSX_RProject_Summer_2018/Week_4/statistic_iris.html)
