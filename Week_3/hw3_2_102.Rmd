@@ -1,0 +1,414 @@
+---
+title: "ptt_studyabroad_crawl_102"
+output:
+  html_document:
+    df_print: paged
+---
+
+## 1.文字雲 看關鍵字
+## 2.看月份發文量、關鍵字討論什麼-->如何做行前規劃
+## 3. 其他特殊分析 例如和美國相關的、地方相關的 等等
+
+
+```{r error = TRUE}
+source("pttTestFunction.R")
+
+# 101 498:734
+# 102 735:912 856
+# 103 913:1050
+# 104 1051:1181
+
+id = c(1180:1181)
+URL = paste0("https://www.ptt.cc/bbs/studyabroad/index", id, ".html")
+filename = paste0(id, ".txt")
+pttTestFunction(URL[1], filename[1])
+mapply(pttTestFunction, 
+       URL = URL, filename = filename)
+
+```
+# 載入網址
+```{r error = TRUE}
+library(xml2)
+library(tmcn)
+library(rvest)
+library(NLP)
+library(tm)
+library(jiebaRD)
+library(jiebaR)
+library(RColorBrewer)
+library(knitr)
+library(wordcloud)
+library(wordcloud2)
+library(jiebaR)
+library(ggplot2)
+library(httr)
+library(dplyr) 
+library(RCurl)
+library(XML)
+library(Matrix)
+library(factoextra)
+library(NLP)
+library(varhandle)
+
+```
+
+```{r error = TRUE}
+from <- 906
+to   <- 912
+prefix = "https://www.ptt.cc/bbs/studyabroad/index"
+
+data <- list()
+for( id in c(from:to) )
+{
+  url  <- paste0( prefix, as.character(id), ".html" )
+  html <- htmlParse( GET(url) )
+  url.list <- xpathSApply( html, "//div[@class='title']/a[@href]", xmlAttrs )
+  data <- rbind( data, as.matrix(paste('https://www.ptt.cc', url.list, sep='')) )
+}
+data <- unlist(data)
+
+head(data)
+```
+
+
+
+```{r error = TRUE}
+# install.packages("tmcn")
+# install.packages("NLP")
+# install.packages("tm")
+# install.packages("jiebaRD")
+# install.packages("jiebaR")
+# install.packages("wordcloud")
+# install.packages("wordcloud2")
+
+```
+
+# 爬出各網址的內文，並且用時間做區隔，存進名為ptt的資料夾
+```{r error = TRUE}
+
+getdoc <- function(url)
+{
+    html <- htmlParse( getURL(url) )
+    doc  <- xpathSApply( html, "//div[@id='main-content']", xmlValue )
+    time <- xpathSApply( html, "//*[@id='main-content']/div[4]/span[2]", xmlValue )
+    temp <- gsub( "  ", " 0", unlist(time) )
+    part <- strsplit(temp, split=" ", fixed=T )
+    # date <- paste(part[[1]][2], part[[1]][3], part[[1]][5], sep="-")
+    # date <- paste(part[[1]][2], part[[1]][5], sep="_")
+    # date <- paste(part[[1]][1], part[[1]][2], sep="_")
+    timestamp <- part[[1]][2]
+    timestamp <- strsplit( timestamp, split=":", fixed=T )
+    month <- timestamp[[1]][1]
+    # print(hour)
+    name <- paste0('./ptt_102/', month, ".txt")
+    write(doc, name, append = TRUE)
+}
+
+sapply(data, getdoc)
+data
+```
+
+
+
+# 將一些無用的字刪除
+```{r error = TRUE}
+toSpace <- content_transformer(function(x, pattern) {
+  return (gsub(pattern, " ", x))
+}
+)
+
+d.corpus <- Corpus( DirSource("./ptt_102"))
+d.corpus <- tm_map(d.corpus, removePunctuation)
+d.corpus <- tm_map(d.corpus, removeNumbers)
+d.corpus <- tm_map(d.corpus, stripWhitespace)
+d.corpus <- tm_map(d.corpus, function(word) {
+    gsub("[A-Za-z0-9]", "", word)
+})
+
+d.corpus <- tm_map(d.corpus, toSpace,"推")
+d.corpus <- tm_map(d.corpus, toSpace,"噓")
+d.corpus <- tm_map(d.corpus, toSpace,"的")
+d.corpus <- tm_map(d.corpus, toSpace,"我")
+d.corpus <- tm_map(d.corpus, toSpace,"標題")
+d.corpus <- tm_map(d.corpus, toSpace,"啊")
+d.corpus <- tm_map(d.corpus, toSpace,"都")
+d.corpus <- tm_map(d.corpus, toSpace,"發信站")
+d.corpus <- tm_map(d.corpus, toSpace,"會")
+d.corpus <- tm_map(d.corpus, toSpace,"批踢踢實業坊")
+d.corpus <- tm_map(d.corpus, toSpace,"看板")
+d.corpus <- tm_map(d.corpus, toSpace,"可以")
+d.corpus <- tm_map(d.corpus, toSpace,"來自")
+d.corpus <- tm_map(d.corpus, toSpace,"是")
+d.corpus <- tm_map(d.corpus, toSpace,"網址")
+d.corpus <- tm_map(d.corpus, toSpace,"把")
+d.corpus <- tm_map(d.corpus, toSpace,"妳")
+d.corpus <- tm_map(d.corpus, toSpace,"你")
+d.corpus <- tm_map(d.corpus, toSpace,"她")
+d.corpus <- tm_map(d.corpus, toSpace,"他")
+d.corpus <- tm_map(d.corpus, toSpace,"到")
+d.corpus <- tm_map(d.corpus, toSpace,"有")
+d.corpus <- tm_map(d.corpus, toSpace,"沒")
+d.corpus <- tm_map(d.corpus, toSpace,"還")
+d.corpus <- tm_map(d.corpus, toSpace,"在")
+d.corpus <- tm_map(d.corpus, toSpace,"用")
+d.corpus <- tm_map(d.corpus, toSpace,"作者")
+d.corpus <- tm_map(d.corpus, toSpace,"覺得")
+d.corpus <- tm_map(d.corpus, toSpace,"想")
+d.corpus <- tm_map(d.corpus, toSpace,"礙於")
+d.corpus <- tm_map(d.corpus, toSpace,"文章")
+d.corpus <- tm_map(d.corpus, toSpace," ")
+d.corpus <- tm_map(d.corpus, toSpace,"吧")
+d.corpus <- tm_map(d.corpus, toSpace,"白")
+# d.corpus <- tm_map(d.corpus, toSpace,"安頓")
+# d.corpus <- tm_map(d.corpus, toSpace,"澳洲")
+# d.corpus <- tm_map(d.corpus, toSpace,"八月")
+d.corpus <- tm_map(d.corpus, toSpace,"班")
+d.corpus <- tm_map(d.corpus, toSpace,"版")
+d.corpus <- tm_map(d.corpus, toSpace,"板友")
+d.corpus <- tm_map(d.corpus, toSpace,"板上")
+d.corpus <- tm_map(d.corpus, toSpace,"幫忙")
+d.corpus <- tm_map(d.corpus, toSpace,"幫幫忙")
+d.corpus <- tm_map(d.corpus, toSpace,"板")
+d.corpus <- tm_map(d.corpus, toSpace,"幫")
+d.corpus <- tm_map(d.corpus, toSpace,"﹏")
+d.corpus <- tm_map(d.corpus, toSpace,"ー")
+d.corpus <- tm_map(d.corpus, toSpace,"阿")
+d.corpus <- tm_map(d.corpus, toSpace,"阿阿阿")
+d.corpus <- tm_map(d.corpus, toSpace,"按")
+d.corpus <- tm_map(d.corpus, toSpace,"阿阿阿要")
+d.corpus <- tm_map(d.corpus, toSpace,"     ")
+d.corpus <- tm_map(d.corpus, toSpace,"    ")
+d.corpus <- tm_map(d.corpus, toSpace,"和")
+d.corpus <- tm_map(d.corpus, toSpace,"哎")
+d.corpus <- tm_map(d.corpus, toSpace,"唉")
+d.corpus <- tm_map(d.corpus, toSpace,"哎呀")
+d.corpus <- tm_map(d.corpus, toSpace,"唉呀")
+d.corpus <- tm_map(d.corpus, toSpace,"呵")
+d.corpus <- tm_map(d.corpus, toSpace,"呵呵")
+d.corpus <- tm_map(d.corpus, toSpace,"呵呵呵")
+d.corpus <- tm_map(d.corpus, toSpace,"不")
+d.corpus <- tm_map(d.corpus, toSpace,"了")
+d.corpus <- tm_map(d.corpus, toSpace,"就")
+d.corpus <- tm_map(d.corpus, toSpace,"也要")
+d.corpus <- tm_map(d.corpus, toSpace,"要")
+d.corpus <- tm_map(d.corpus, toSpace,"也")
+d.corpus <- tm_map(d.corpus, toSpace,"但")
+d.corpus <- tm_map(d.corpus, toSpace,"很")
+d.corpus <- tm_map(d.corpus, toSpace,"問題")
+d.corpus <- tm_map(d.corpus, toSpace,"人")
+d.corpus <- tm_map(d.corpus, toSpace,"好")
+d.corpus <- tm_map(d.corpus, toSpace,"不好")
+d.corpus <- tm_map(d.corpus, toSpace,"說")
+d.corpus <- tm_map(d.corpus, toSpace,"去")
+d.corpus <- tm_map(d.corpus, toSpace,"時間")
+d.corpus <- tm_map(d.corpus, toSpace,"們")
+d.corpus <- tm_map(d.corpus, toSpace,"跟")
+d.corpus <- tm_map(d.corpus, toSpace,"多")
+d.corpus <- tm_map(d.corpus, toSpace,"只")
+d.corpus <- tm_map(d.corpus, toSpace,"自己")
+# d.corpus <- tm_map(d.corpus, toSpace,"美國")
+# d.corpus <- tm_map(d.corpus, toSpace,"學校")
+# d.corpus <- tm_map(d.corpus, toSpace,"申請")
+d.corpus <- tm_map(d.corpus, toSpace,"看")
+d.corpus <- tm_map(d.corpus, toSpace,"如果")
+d.corpus <- tm_map(d.corpus, toSpace,"可以")
+d.corpus <- tm_map(d.corpus, toSpace,"上")
+d.corpus <- tm_map(d.corpus, toSpace,"所以")
+d.corpus <- tm_map(d.corpus, toSpace,"嗎")
+d.corpus <- tm_map(d.corpus, toSpace,"因為")
+d.corpus <- tm_map(d.corpus, toSpace,"過")
+d.corpus <- tm_map(d.corpus, toSpace,"或")
+d.corpus <- tm_map(d.corpus, toSpace,"大家")
+d.corpus <- tm_map(d.corpus, toSpace,"這")
+d.corpus <- tm_map(d.corpus, toSpace,"早")
+d.corpus <- tm_map(d.corpus, toSpace,"比較")
+d.corpus <- tm_map(d.corpus, toSpace,"找")
+d.corpus <- tm_map(d.corpus, toSpace,"個")
+d.corpus <- tm_map(d.corpus, toSpace,"知道")
+d.corpus <- tm_map(d.corpus, toSpace,"真")
+d.corpus <- tm_map(d.corpus, toSpace,"一個")
+# d.corpus <- tm_map(d.corpus, toSpace,"學生")
+d.corpus <- tm_map(d.corpus, toSpace,"哇")
+d.corpus <- tm_map(d.corpus, toSpace,"一")
+d.corpus <- tm_map(d.corpus, toSpace,"來")
+d.corpus <- tm_map(d.corpus, toSpace,"謝謝")
+d.corpus <- tm_map(d.corpus, toSpace,"能")
+d.corpus <- tm_map(d.corpus, toSpace,"應該")
+d.corpus <- tm_map(d.corpus, toSpace,"被")
+d.corpus <- tm_map(d.corpus, toSpace,"呢")
+d.corpus <- tm_map(d.corpus, toSpace,"太")
+d.corpus <- tm_map(d.corpus, toSpace,"或")
+d.corpus <- tm_map(d.corpus, toSpace,"後")
+d.corpus <- tm_map(d.corpus, toSpace,"些")
+d.corpus <- tm_map(d.corpus, toSpace,"樣")
+d.corpus <- tm_map(d.corpus, toSpace,"下")
+d.corpus <- tm_map(d.corpus, toSpace,"可")
+d.corpus <- tm_map(d.corpus, toSpace,"人")
+d.corpus <- tm_map(d.corpus, toSpace,"請問")
+d.corpus <- tm_map(d.corpus, toSpace,"什麼")
+d.corpus <- tm_map(d.corpus, toSpace,"才")
+d.corpus <- tm_map(d.corpus, toSpace,"大")
+d.corpus <- tm_map(d.corpus, toSpace,"那")
+d.corpus <- tm_map(d.corpus, toSpace,"最")
+d.corpus <- tm_map(d.corpus, toSpace,"年")
+d.corpus <- tm_map(d.corpus, toSpace,"話")
+d.corpus <- tm_map(d.corpus, toSpace,"給")
+# d.corpus <- tm_map(d.corpus, toSpace,"學")
+d.corpus <- tm_map(d.corpus, toSpace,"同")
+d.corpus <- tm_map(d.corpus, toSpace,"問")
+# d.corpus <- tm_map(d.corpus, toSpace,"請")
+d.corpus <- tm_map(d.corpus, toSpace,"若")
+
+```
+
+
+## 方法2
+```{r error = TRUE}
+mixseg = worker()
+jieba_tokenizer = function(d)
+{
+  unlist( segment(d[[1]], mixseg) )
+}
+seg = lapply(d.corpus, jieba_tokenizer)
+
+count_token = function(d)
+{
+  as.data.frame(table(d))
+}
+tokens = lapply(seg, count_token)
+
+n = length(seg)
+TDM = tokens[[1]]
+colNames <- names(seg)
+colNames <- gsub(".txt", "", colNames)
+
+
+for( id in c(2:n) )
+{
+  TDM = merge(TDM, tokens[[id]], by="d", all = TRUE)
+  names(TDM) = c('d', colNames[1:id])
+}
+TDM[is.na(TDM)] <- 0
+library(knitr)
+kable(head(TDM))
+ 
+```
+
+# 將建好的TDM轉成tf-idf
+```{r error = TRUE}
+# TF-IDF
+tf <- apply(as.matrix(TDM[,2:(as.numeric(n)+1)]), 2, sum) #所有字詞的出現次數和
+idfCal <- function(word_doc)
+{ 
+  log2( as.numeric(n) / nnzero(word_doc) ) 
+}
+idf <- apply(as.matrix(TDM[,2:(as.numeric(n)+1)]), 1, idfCal)
+doc.tfidf <- TDM
+
+tempY = matrix(rep(c(as.matrix(tf)), each = length(idf)), nrow = length(idf))
+tempX = matrix(rep(c(as.matrix(idf)), each = length(tf)), ncol = length(tf), byrow = TRUE)
+doc.tfidf[,2:(as.numeric(n)+1)] <- (doc.tfidf[,2:(as.numeric(n)+1)] / tempY) * tempX
+stopLine = rowSums(doc.tfidf[,2:(as.numeric(n)+1)])
+delID = which(stopLine == 0) # 0 就是不需要的 (log=0)
+TDM = TDM[-delID,]
+doc.tfidf = doc.tfidf[-delID,] #正式生成TF-IDF
+```
+
+# 查看前十名
+```{r error = TRUE}
+TopWords = data.frame()
+for( id in c(1:n) )
+{
+  dayMax = order(TDM[,id+1], decreasing = TRUE)
+  # View(dayMax)
+  showResult = t(as.data.frame(TDM[dayMax[1:5],1]))
+  TopWords = rbind(TopWords, showResult)
+}
+
+rownames(TopWords) = colnames(TDM)[2:(n+1)]
+TopWords = droplevels(TopWords)
+kable(TopWords)
+
+
+```
+
+```{r error = TRUE}
+TDM$d = as.character(TDM$d)
+AllTop = as.data.frame( table(as.matrix(TopWords)) )
+AllTop
+AllTop = AllTop[order(AllTop$Freq, decreasing = TRUE),]
+
+kable(head(AllTop))
+```
+
+
+```{r error = TRUE}
+TopNo = 5
+tempGraph = data.frame()
+for( t in c(1:TopNo) )
+{
+  word = matrix( rep(c(as.matrix(AllTop$Var1[t])), each = n), nrow = n )
+  temp = cbind( colnames(doc.tfidf)[2:(n+1)], t(TDM[which(TDM$d == AllTop$Var1[t]), 2:(n+1)]), word )
+  colnames(temp) = c("month", "freq", "words")
+  tempGraph = rbind(tempGraph, temp)
+  names(tempGraph) = c("month", "freq", "words")
+}
+
+library(ggplot2)
+```
+
+```{r error = TRUE}
+install.packages('varhandle')
+library(varhandle)
+
+```
+
+# 將成果視覺化
+```{r error = TRUE}
+# tempGraph$freq = unfactor(tempGraph$freq)
+ggplot(tempGraph, aes(month, freq)) + 
+  geom_point(aes(color = words, shape = words), size = 5) +
+  geom_line(aes(group = words, linetype = words))+theme(text = element_text(family = "STHeiti"))
+```
+
+```{r error = TRUE}
+kable(tail(AllTop))
+```
+
+```{r error = TRUE}
+filenames = as.array(paste0("./ptt_102/",colnames(doc.tfidf)[2:(n+1)],".txt"))
+sizeResult = apply(filenames, 1, file.size) / 1024
+showSize = data.frame(colnames(doc.tfidf)[2:(n+1)], sizeResult)
+names(showSize) = c("month", "size_KB")
+
+ggplot(showSize, aes(x = month, y = size_KB)) + geom_bar(stat="identity")
+
+
+
+
+```
+
+
+
+
+
+## 這兩個市話文字雲和計算各個字詞的頻率
+```{r error = TRUE}
+mixseg = worker()
+jieba_tokenizer=function(d){
+  unlist(segment(d[[1]],mixseg))
+}
+seg = lapply(d.corpus, jieba_tokenizer)
+freqFrame = as.data.frame(table(unlist(seg)))
+freqFrame = freqFrame[order(freqFrame$Freq,decreasing=TRUE), ]
+library(knitr)
+kable(head(freqFrame), format = "markdown")
+```
+
+```{r error = TRUE}
+wordcloud2(freqFrame[1:300,], size = 0.5,shape = 'pentagon')
+```
+
+
+
+
