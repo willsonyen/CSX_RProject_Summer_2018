@@ -2,7 +2,7 @@
 
 ## Introduce myself
 
->Hello,my name is 顏郁修（WillsonYen）,this project is a lesson from CSX call 資料科學程式設計 in NTU.It's my first time to learn R,having fun!
+>Hello,my name is WillsonYen,this project is a lesson from CSX call 資料科學程式設計 in NTU.It's my first time to learn R,having fun!
 
 
 ***
