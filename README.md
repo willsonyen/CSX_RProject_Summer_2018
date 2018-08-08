@@ -48,3 +48,12 @@
 * At home
   1. 以iris的data為基礎，練習ANOVA分析、回歸分析，並得出有意義的結果。
    \ [hw4](https://willsonyen.github.io/CSX_RProject_Summer_2018/Week_4/statistic_iris.html)
+   
+
+## Week 5,6:project的準備與呈現
+* In class
+  1. project簡報連結：
+  \ [ppt](https://drive.google.com/file/d/1JUU_cj1MKSeaYgux1vVqpKkWSz0TKVAA/view?usp=sharing)
+* At home
+  1. 以iris的data為基礎，練習ANOVA分析、回歸分析，並得出有意義的結果。
+   \ [hw4](https://willsonyen.github.io/CSX_RProject_Summer_2018/Week_4/statistic_iris.html)
