@@ -1,0 +1,12 @@
+name: exc_student
+title: exc_student
+username:
+account: willsonyen
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 396955
+bundleId: 1524231
+url: https://willsonyen.shinyapps.io/exc_student/
+when: 1533709050.59782
+asMultiple: FALSE
+asStatic: FALSE
