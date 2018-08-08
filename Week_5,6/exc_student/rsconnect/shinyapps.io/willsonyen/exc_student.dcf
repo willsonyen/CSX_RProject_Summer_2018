@@ -5,8 +5,8 @@ account: willsonyen
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 396955
-bundleId: 1524231
+bundleId: 1524266
 url: https://willsonyen.shinyapps.io/exc_student/
-when: 1533709050.59782
+when: 1533710419.91054
 asMultiple: FALSE
 asStatic: FALSE

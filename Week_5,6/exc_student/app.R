@@ -2,7 +2,7 @@ library(shiny)
 library(ggplot2)
 library(gridExtra)
 library(readxl)
-library(DT)
+# library(DT)
 library(shinythemes)
 # install.packages("shinythemes")
 
@@ -24,21 +24,20 @@ ui <- fluidPage(
         br(),
         p("簡報連結：",
           span("https://drive.google.com/file/d/1JUU_cj1MKSeaYgux1vVqpKkWSz0TKVAA/view?usp=sharing", style = "color:blue"),
-          "請點我")
+          "複製我")
       )
     ),
     tabPanel('raw data',
              titlePanel('原始資料'),
              sidebarPanel(
                conditionalPanel(
-                 'input.dataset === "exc_data"',
                  checkboxGroupInput('show_vars', 'Columns in exc_data to show:',
                                     names(exc_data), selected = names(exc_data))),
                
                mainPanel(
                  tabsetPanel(
                    id = 'dataset',
-                   tabPanel("exc_data", DT::dataTableOutput("table1")))
+                   tabPanel("exc_data", dataTableOutput("table1")))
                ))
     ),
     
@@ -68,7 +67,7 @@ ui <- fluidPage(
              ),
              
              fluidRow(
-               DT::dataTableOutput('table2')
+               dataTableOutput('table2')
              )
              
     ),
